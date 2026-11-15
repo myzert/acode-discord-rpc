@@ -1,37 +1,44 @@
-# Discord Rich Presence for Acode (VS Code Style) 🚀
+# Discord Rich Presence for Acode (Android) 📱✨
 
-Plugin resmi untuk aplikasi editor kode Android **Acode**, yang memunculkan status aktivitas coding kamu di Discord dengan tampilan **100% otentik Visual Studio Code Rich Presence**!
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/myzert/acode-discord-rpc)
+[![Platform](https://img.shields.io/badge/platform-Acode%20(Android)-teal.svg)](https://acode.foxdebug.com)
+[![Author](https://img.shields.io/badge/author-myzert-purple.svg)](https://github.com/myzert)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+Plugin resmi untuk aplikasi editor kode Android **Acode**, yang memunculkan status aktivitas coding kamu di Discord secara realtime dengan status **Acode**!
 
 ---
 
-## ✨ Fitur Unggulan
+## 🌟 Fitur Utama
 
-* **100% Tampilan Otentik VS Code:**
-  * Terdeteksi sebagai aplikasi resmi `Visual Studio Code` di Discord.
-  * Logo besar resmi VS Code dengan logo kecil (badge) bahasa pemrograman.
-* **Deteksi Bahasa Otomatis:**
-  * Lebih dari 50+ bahasa didukung otomatis (JavaScript, TypeScript, Python, HTML, CSS, C/C++, Java, Rust, Go, PHP, Kotlin, Dart, Zig, Docker, dll).
-* **Realtime File & Line Tracking:**
-  * Menampilkan file yang sedang dibuka: `Editing index.js`.
-  * Menampilkan workspace folder dan baris kursor: `Workspace: cihuynime - Ln 42, Col 18`.
-* **Deteksi Idle Otomatis:**
-  * Jika kamu tidak mengetik selama 5 menit, status otomatis berubah menjadi `Idling` dengan icon *idle VS Code*.
-* **Tombol Interaktif di Profil Discord:**
-  * Tombol link langsung ke repository GitHub project kamu (misal: `https://github.com/myzert/cihuynime`).
-  * Tombol link ke Acode Editor.
-* **Hours Offset (Flexing Timer):**
-  * Fitur iseng buat set timer mulai mundur (misal 200 jam yang lalu) biar kelihatan ngoding marathon!
-* **Ringan & Tanpa Dependensi:**
-  * Menggunakan native WebSockets browser Acode langsung ke Discord Gateway, tanpa butuh Termux atau Node.js terpisah saat dijalankan.
+* **📱 Status Acode Otentik:**
+  * Di Discord tampil sebagai `Acode` (atau bisa diganti ke `Visual Studio Code`).
+  * Large Text: `Acode - Code Editor on Android`.
+* **📂 Deteksi Bahasa Otomatis (50+ Bahasa):**
+  * Otomatis mengenali ekstensi file: JavaScript, TypeScript, Python, HTML, CSS, C/C++, Java, Rust, Go, PHP, Kotlin, Dart, Zig, Docker, JSON, Markdown, YAML, dan banyak lagi.
+* **⚡ Realtime File, Line & Column Tracking:**
+  * **Details:** `Editing index.js (154 lines)`
+  * **State:** `Workspace: cihuynime - Ln 42, Col 18`
+* **💤 Deteksi Idle Otomatis:**
+  * Jika kamu istirahat atau tidak mengetik selama 5 menit, status otomatis berubah jadi `Idling in cihuynime`.
+* **🔗 Tombol Interaktif di Profil:**
+  * **Tombol 1:** Link langsung ke repository GitHub kamu (misal: [github.com/myzert/cihuynime](https://github.com/myzert/cihuynime)).
+  * **Tombol 2:** Link ke Acode Editor (`https://acode.foxdebug.com`).
+* **⏳ Hours Offset (Flexing Timer):**
+  * Fitur iseng untuk mengatur timer mundur (misal: 200 jam yang lalu) agar terlihat ngoding marathon tanpa henti!
+* **⚙️ Built-in Settings Menu:**
+  * Atur token, ganti nama status, link repository, dan offset waktu langsung di dalam aplikasi Acode via shortcut `Ctrl + Alt + D`.
+* **🔋 Super Ringan & Hemat Daya:**
+  * Menggunakan WebSocket native Android WebView tanpa memerlukan Termux atau Node.js tambahan saat dijalankan.
 
 ---
 
 ## 📥 Cara Pasang di Aplikasi Acode
 
-1. Unduh atau salin file `acode-discord-rpc.zip` ke penyimpanan HP kamu.
+1. Unduh file `acode-discord-rpc.zip` dari halaman [Releases](https://github.com/myzert/acode-discord-rpc/releases) (atau ambil dari folder `Download` di HP kamu).
 2. Buka aplikasi **Acode**.
-3. Buka **Pengaturan (Settings)** ➔ **Plugins**.
-4. Tekan tombol titik tiga `⋮` di pojok kanan atas, pilih **Install from storage**.
+3. Masuk ke **Settings (Pengaturan)** ➔ **Plugins**.
+4. Tekan tombol titik tiga `⋮` di pojok kanan atas ➔ pilih **Install from storage**.
 5. Pilih file `acode-discord-rpc.zip`.
 6. Selesai! Plugin langsung aktif.
 
@@ -40,10 +47,10 @@ Plugin resmi untuk aplikasi editor kode Android **Acode**, yang memunculkan stat
 ## ⚙️ Cara Konfigurasi
 
 1. Buka file apa saja di Acode.
-2. Buka Command Palette (atau tekan shortcut `Ctrl + Alt + D`), ketik `discord_rpc_settings`.
+2. Buka Command Palette (atau tekan `Ctrl + Alt + D`).
 3. Masukkan **Discord User Token** kamu.
-4. (Opsional) Masukkan link repository GitHub kamu.
-5. Klik Simpan. Begitu terhubung, notifikasi toast bertuliskan `✨ Discord RPC Aktif!` akan muncul di Acode!
+4. Masukkan link repository kamu (default: `https://github.com/myzert/cihuynime`).
+5. Simpan pengaturan. Status kamu di Discord akan langsung live!
 
 ---
 
@@ -52,6 +59,6 @@ Token Discord kamu hanya disimpan secara lokal di dalam memori penyimpanan Acode
 
 ---
 
-## 👨‍💻 Author
-Dibuat dengan ❤️ oleh **[myzert](https://github.com/myzert)**.
-Repo: [github.com/myzert/acode-discord-rpc](https://github.com/myzert/acode-discord-rpc)
+## 👨‍💻 Author & Lisensi
+Dibuat dengan ❤️ oleh **[myzert](https://github.com/myzert)**.  
+Lisensi: MIT.

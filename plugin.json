@@ -1,23 +1,28 @@
 {
-  "id": "myzert.discord.rpc",
-  "name": "Discord Rich Presence (VS Code)",
+  "id": "myzert.acode.discord.rpc",
+  "name": "Discord Rich Presence for Acode",
   "main": "main.js",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "readme": "readme.md",
   "icon": "icon.png",
   "files": [],
   "price": 0,
-  "description": "Show your real-time coding activity in Discord with 100% authentic Visual Studio Code Rich Presence directly from Acode on Android!",
+  "description": "Show off your live coding status on Discord directly from Acode on Android! Featuring real-time file tracking, line/col numbers, total line count, language detection, custom repository buttons, idle detection, and timer offset.",
   "keywords": [
     "discord",
     "rpc",
     "rich presence",
-    "vscode",
-    "status",
+    "acode",
+    "android",
+    "coding status",
     "activity"
   ],
   "author": {
     "name": "myzert",
     "github": "myzert"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/myzert/acode-discord-rpc"
   }
 }
