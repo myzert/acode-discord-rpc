@@ -8,15 +8,16 @@
   "files": [],
   "price": 0,
   "license": "MIT",
-  "description": "Show off your live coding status on Discord directly from Acode on Android! Featuring authentic Acode logos, Playing or Listening modes, instant On/Off toggle, auto workspace detection, line/col tracking, and idle detection.",
+  "description": "Broadcast live coding status directly to Discord from Acode on Android. Features authentic Acode branding, Visual Studio Code layout fidelity, dynamic language badges, automatic Git repository detection, workspace tracking, and idle mode.",
   "keywords": [
     "discord",
-    "rpc",
-    "rich presence",
+    "discord-rpc",
+    "rich-presence",
     "acode",
+    "acode-plugin",
     "android",
-    "coding status",
-    "activity"
+    "developer-tools",
+    "javascript"
   ],
   "author": {
     "name": "myzert",

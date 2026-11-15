@@ -186,11 +186,11 @@
       this.saveSettings();
 
       if (this.settings.enabled) {
-        this.showToast('🟢 Discord RPC Diaktifkan! Menyambungkan...');
+        this.showToast('Discord RPC Enabled. Connecting...');
         this.connect();
       } else {
         this.clearPresenceAndDisconnect();
-        this.showToast('🔴 Discord RPC Dimatikan.');
+        this.showToast('Discord RPC Disabled.');
       }
     }
 
@@ -497,14 +497,7 @@
       } else {
         const displayFileName = this.settings.privacyMode ? 'Protected File' : fileInfo.fileName;
         details = `Editing ${displayFileName}`;
-
         state = `Workspace: ${fileInfo.workspace}`;
-        if (fileInfo.gitBranch && !this.settings.privacyMode) {
-          state += ` [${fileInfo.gitBranch}]`;
-        }
-        if (this.settings.showCursorPosition && !this.settings.privacyMode) {
-          state += ` - Ln ${fileInfo.line}, Col ${fileInfo.col}`;
-        }
       }
 
       const activityType = parseInt(this.settings.activityType || 0, 10);
@@ -626,8 +619,8 @@
             if (msg.t === 'READY') {
               this.isConnected = true;
               const user = msg.d.user;
-              this.showToast(`✨ Acode Discord RPC Aktif! (${user.username})`);
-              console.log(`[Discord RPC] Siap sebagai ${user.username}`);
+              this.showToast(`Discord RPC Connected (${user.username})`);
+              console.log(`[Discord RPC] Ready as ${user.username}`);
               this.sendPresenceUpdate();
             }
             break;

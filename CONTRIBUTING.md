@@ -1,57 +1,55 @@
 # Contributing to Discord Rich Presence for Acode
 
-Thank you for your interest in contributing to **Discord Rich Presence for Acode**! Community contributions are welcome to keep this extension fast, reliable, and feature-rich.
+Thank you for your interest in contributing to Discord Rich Presence for Acode. Community contributions help maintain reliability, performance, and compatibility across Android devices and Acode versions.
 
 ---
 
 ## Code of Conduct
 
-Please maintain a welcoming, respectful, and collaborative environment when communicating in discussions, issues, and pull requests.
+Maintain a professional, collaborative, and constructive atmosphere in all discussions, issues, and pull requests.
 
 ---
 
-## How Can You Contribute?
+## Contribution Areas
 
-### 1. Reporting Bugs
-- Search existing issues to ensure the bug hasn't already been reported.
-- Open a new issue with a clear title and detailed reproduction steps.
-- Include your Android version, Acode version, and file type if relevant.
+### 1. Issue Reporting
+- Search existing issues before creating a new ticket to prevent duplicates.
+- Provide comprehensive reproduction steps, including device model, Android version, Acode version, and file types affected.
 
-### 2. Suggesting Features
-- Open a feature request issue explaining the proposed functionality and why it benefits mobile developers.
+### 2. Feature Requests
+- Submit feature suggestions with clear rationale and use cases highlighting advantages for mobile development workflows.
 
-### 3. Adding Language Asset Mappings
-- We support 50+ language extensions. If a programming language or framework icon is missing, you can add it to the `LANGUAGE_MAP` object in `main.js`.
+### 3. Language Icon Assets
+- Over 50 programming language file extensions are currently supported. To propose or add new language extensions, update the `LANGUAGE_MAP` registry located in `main.js`.
 
 ---
 
 ## Development Workflow
 
-1. **Fork & Clone:**
+1. Fork and clone the repository:
    ```bash
    git clone https://github.com/myzert/acode-discord-rpc.git
    cd acode-discord-rpc
    ```
 
-2. **Make Changes:**
-   Edit `main.js`, `plugin.json`, or documentation files.
+2. Implement changes in `main.js`, `plugin.json`, or documentation files.
 
-3. **Build the Plugin Package:**
+3. Build the distribution package locally:
    ```bash
    chmod +x ./build.sh
    ./build.sh
    ```
-   This generates `plugin.zip` (for the Acode registry) and `acode-discord-rpc.zip` (for manual installation).
+   Note: Built archive packages (`plugin.zip`, `acode-discord-rpc.zip`) are automatically ignored by git and should not be committed to the repository.
 
-4. **Test in Acode:**
-   Copy `acode-discord-rpc.zip` to your device and install via **Settings > Plugins > Install from storage**.
+4. Validate the plugin in Acode:
+   Install the generated archive package via **Settings > Plugins > Install from storage**.
 
-5. **Submit a Pull Request:**
-   Push your changes to your fork and submit a PR to the `main` branch with a clear description of the improvements.
+5. Submit a Pull Request:
+   Push changes to your fork and submit a pull request against the `main` branch with an explanation of your modifications.
 
 ---
 
-## Guidelines
-- Write defensive, asynchronous JavaScript compatible with Android WebView.
-- Always wrap file system operations and editor event bindings in `try/catch` blocks.
-- Keep dependencies zero — maintain native WebSocket communication without external libraries.
+## Engineering Guidelines
+- Write defensive, asynchronous JavaScript compatible with the Android WebView runtime.
+- Wrap file system and editor event interactions in appropriate error-handling blocks.
+- Maintain zero external runtime dependencies by relying on native WebSocket implementations.
