@@ -539,7 +539,7 @@
       }
 
       buttons.push('Get Acode');
-      buttonUrls.push('https://acode.foxdebug.com');
+      buttonUrls.push('https://acode.app');
 
       activity.buttons = buttons;
       activity.metadata = { button_urls: buttonUrls };
