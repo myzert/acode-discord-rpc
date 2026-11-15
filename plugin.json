@@ -7,6 +7,7 @@
   "icon": "icon.png",
   "files": [],
   "price": 0,
+  "license": "MIT",
   "description": "Show off your live coding status on Discord directly from Acode on Android! Featuring authentic Acode logos, Playing or Listening modes, instant On/Off toggle, auto workspace detection, line/col tracking, and idle detection.",
   "keywords": [
     "discord",
