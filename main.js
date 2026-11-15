@@ -1,67 +1,19 @@
 /**
  * Discord Rich Presence for Acode (Android)
- * High-performance, feature-packed Discord RPC for Acode Editor.
+ * Full-featured, native Discord RPC with authentic Acode branding.
  * Author: myzert (https://github.com/myzert)
  * Repository: https://github.com/myzert/acode-discord-rpc
  */
 
 (() => {
   const PLUGIN_ID = 'myzert.acode.discord.rpc';
-  const VSCODE_APP_ID = '383226320970055681';
 
-  // 50+ Bahasa Pemrograman yang didukung otomatis
-  const LANGUAGE_ASSETS = {
-    // JavaScript / TypeScript / Web
-    js: { id: '1359299016025964687', name: 'JavaScript' },
-    mjs: { id: '1359299016025964687', name: 'JavaScript' },
-    cjs: { id: '1359299016025964687', name: 'JavaScript' },
-    jsx: { id: '1359299015983894651', name: 'React JSX' },
-    ts: { id: '1359299427059236984', name: 'TypeScript' },
-    tsx: { id: '1359299426262319284', name: 'React TSX' },
-    html: { id: '1359298971646038066', name: 'HTML' },
-    htm: { id: '1359298971646038066', name: 'HTML' },
-    css: { id: '1359298399085527152', name: 'CSS' },
-    scss: { id: '1359299338932584549', name: 'SCSS' },
-    less: { id: '1359299073168904372', name: 'Less' },
-    vue: { id: '1359299519573131545', name: 'Vue' },
-    svelte: { id: '1359299371639771367', name: 'Svelte' },
-
-    // Python & Machine Learning
-    py: { id: '1359299282380918886', name: 'Python' },
-    ipynb: { id: '1359299015988084927', name: 'Jupyter' },
-
-    // Systems & Mobile
-    c: { id: '1359298290058789037', name: 'C' },
-    h: { id: '1359298290058789037', name: 'C Header' },
-    cpp: { id: '1359298399379390484', name: 'C++' },
-    hpp: { id: '1359298399379390484', name: 'C++ Header' },
-    cs: { id: '1359298403259121674', name: 'C#' },
-    java: { id: '1359298971738050570', name: 'Java' },
-    kt: { id: '1359299073122766999', name: 'Kotlin' },
-    rs: { id: '1359299338907549887', name: 'Rust' },
-    go: { id: '1359298884043800586', name: 'Go' },
-    php: { id: '1359299228186312897', name: 'PHP' },
-    rb: { id: '1359299282435571752', name: 'Ruby' },
-    dart: { id: '1359298399483990157', name: 'Dart' },
-    lua: { id: '1359299073148059749', name: 'Lua' },
-    zig: { id: '1359299561897721957', name: 'Zig' },
-
-    // Scripts, Configs, Databases
-    sh: { id: '1359299339071131708', name: 'Shell Script' },
-    bash: { id: '1359299339071131708', name: 'Bash' },
-    zsh: { id: '1359299339071131708', name: 'Zsh' },
-    json: { id: '1359299015484768338', name: 'JSON' },
-    md: { id: '1359299128655347824', name: 'Markdown' },
-    yaml: { id: '1359299519124078724', name: 'YAML' },
-    yml: { id: '1359299519124078724', name: 'YAML' },
-    toml: { id: '1359299426157461678', name: 'TOML' },
-    xml: { id: '1359299519522672701', name: 'XML' },
-    sql: { id: '1359299339075321937', name: 'SQL' },
-    dockerfile: { id: '1359298813092823040', name: 'Docker' },
+  // ID Aplikasi Acode Resmi & Asset Logo
+  const DEFAULT_APP_ID = '1571462947983593595';
+  const ACODE_ASSETS = {
+    blue_bg: '1571468057010905220', // acode-ada-bg-biru
+    transparent: '1571468057639915630', // acode-bg-transparan
   };
-
-  const ASSET_VSCODE_MAIN = '1359299466493956258';
-  const ASSET_VSCODE_IDLE = '1359298971905822881';
 
   class DiscordRPCPlugin {
     constructor() {
@@ -75,15 +27,18 @@
       this.lastPresenceSent = 0;
       this.pendingUpdateTimeout = null;
 
-      // Konfigurasi Default
+      // Konfigurasi Lengkap
       this.settings = {
         enabled: true,
         token: '',
         appName: 'Acode',
-        applicationId: VSCODE_APP_ID,
-        repoUrl: 'https://github.com/myzert/cihuynime',
+        applicationId: DEFAULT_APP_ID,
+        activityType: 0, // 0 = PLAYING, 2 = LISTENING, 3 = WATCHING, 5 = COMPETING
+        logoStyle: 'blue_bg', // 'blue_bg' atau 'transparent'
+        repoUrl: 'https://github.com/myzert/acode-discord-rpc',
         repoLabel: 'View Repository',
         workspaceOverride: '',
+        privacyMode: false, // Sembunyikan nama file asli
         showLineCount: true,
         showCursorPosition: true,
         idleTimeoutMinutes: 5,
@@ -94,59 +49,112 @@
     async init($page) {
       this.loadSettings();
 
-      // Daftarkan command di Command Palette
-      try {
-        if (window.editorManager && editorManager.editor && editorManager.editor.commands) {
-          editorManager.editor.commands.addCommand({
-            name: 'discord_rpc_settings',
-            bindKey: { win: 'Ctrl-Alt-D', mac: 'Command-Alt-D' },
-            exec: () => this.showSettingsDialog(),
-          });
-        }
-      } catch (e) {
-        console.warn('[Discord RPC] Gagal mendaftarkan shortcut editor:', e);
-      }
+      // Daftarkan Perintah Command Palette Acode
+      this.registerCommands();
 
+      // Tambahkan Icon di Header Acode
       this.registerHeaderIcon();
+
+      // Pasang Event Hook Editor
       this.bindEditorEvents();
 
-      // Timer cek idle tiap 30 detik
+      // Timer Pengecekan Idle Status
       setInterval(() => this.checkIdleStatus(), 30000);
 
-      // Konek otomatis jika token tersedia
+      // Mulai koneksi jika diaktifkan dan token tersedia
       if (this.settings.enabled && this.settings.token) {
         this.connect();
       } else if (!this.settings.token) {
-        this.showToast('Discord RPC: Tekan Ctrl+Alt+D untuk mengatur Token Discord.');
+        this.showToast('Discord RPC: Tekan Ctrl+Alt+D untuk memasukkan Token Discord.');
       }
     }
 
     loadSettings() {
       try {
-        const saved = localStorage.getItem('myzert_acode_discord_rpc_v2');
+        const saved = localStorage.getItem('myzert_acode_discord_rpc_v3');
         if (saved) {
           this.settings = { ...this.settings, ...JSON.parse(saved) };
         }
       } catch (e) {
-        console.error('[Discord RPC] Gagal membaca setting:', e);
+        console.error('[Discord RPC] Gagal membaca konfigurasi:', e);
       }
     }
 
     saveSettings() {
       try {
-        localStorage.setItem('myzert_acode_discord_rpc_v2', JSON.stringify(this.settings));
+        localStorage.setItem('myzert_acode_discord_rpc_v3', JSON.stringify(this.settings));
       } catch (e) {
-        console.error('[Discord RPC] Gagal menyimpan setting:', e);
+        console.error('[Discord RPC] Gagal menyimpan konfigurasi:', e);
       }
+    }
+
+    registerCommands() {
+      if (!window.editorManager || !editorManager.editor || !editorManager.editor.commands) return;
+
+      // 1. Pengaturan Utama
+      editorManager.editor.commands.addCommand({
+        name: 'discord_rpc_settings',
+        bindKey: { win: 'Ctrl-Alt-D', mac: 'Command-Alt-D' },
+        exec: () => this.showSettingsDialog(),
+      });
+
+      // 2. Toggle On / Off
+      editorManager.editor.commands.addCommand({
+        name: 'discord_rpc_toggle',
+        bindKey: { win: 'Ctrl-Alt-T', mac: 'Command-Alt-T' },
+        exec: () => this.toggleRPC(),
+      });
+
+      // 3. Paksa Hubungkan Ulang (Reconnect)
+      editorManager.editor.commands.addCommand({
+        name: 'discord_rpc_reconnect',
+        exec: () => {
+          this.showToast('Menghubungkan ulang Discord RPC...');
+          this.connect();
+        },
+      });
     }
 
     registerHeaderIcon() {
       if (window.acode && typeof acode.addIcon === 'function') {
         acode.addIcon(
-          'acode-discord-icon',
-          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%2300B4D8"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>'
+          'acode-rpc-icon',
+          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%2300B4D8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>'
         );
       }
+    }
+
+    toggleRPC() {
+      this.settings.enabled = !this.settings.enabled;
+      this.saveSettings();
+
+      if (this.settings.enabled) {
+        this.showToast('🟢 Discord RPC Diaktifkan! Menyambungkan...');
+        this.connect();
+      } else {
+        this.clearPresenceAndDisconnect();
+        this.showToast('🔴 Discord RPC Dimatikan.');
+      }
+    }
+
+    clearPresenceAndDisconnect() {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        try {
+          // Kirim payload kosong untuk menghapus aktivitas di Discord
+          this.ws.send(
+            JSON.stringify({
+              op: 3,
+              d: {
+                since: 0,
+                activities: [],
+                status: 'online',
+                afk: false,
+              },
+            })
+          );
+        } catch (e) {}
+      }
+      this.disconnect();
     }
 
     bindEditorEvents() {
@@ -158,7 +166,6 @@
         this.schedulePresenceUpdate(delay);
       };
 
-      // Hook event editorManager aman tanpa crash
       try {
         if (typeof editorManager.on === 'function') {
           editorManager.on('switch-file', () => triggerActivity(1500));
@@ -167,14 +174,12 @@
           editorManager.on('update', () => triggerActivity(3000));
         }
       } catch (err) {
-        console.warn('[Discord RPC] editorManager hook error:', err);
+        console.warn('[Discord RPC] Error binding editorManager:', err);
       }
 
-      // Hook Ace / CodeMirror editor changes secara defensif
       try {
         const editor = editorManager.editor;
         if (editor) {
-          // Ace EditSession
           if (editor.session && typeof editor.session.on === 'function') {
             editor.session.on('change', () => triggerActivity(4000));
           } else if (typeof editor.addEventListener === 'function') {
@@ -182,12 +187,12 @@
           }
         }
       } catch (err) {
-        console.warn('[Discord RPC] Editor change hook error:', err);
+        console.warn('[Discord RPC] Error binding editor changes:', err);
       }
 
-      // Polling berkala setiap 15 detik untuk update line & col saat koding
+      // Auto update line/column setiap 15 detik
       setInterval(() => {
-        if (this.isConnected && !this.isIdle) {
+        if (this.isConnected && !this.isIdle && this.settings.enabled) {
           this.schedulePresenceUpdate(0);
         }
       }, 15000);
@@ -203,13 +208,15 @@
     }
 
     schedulePresenceUpdate(delay = 3000) {
+      if (!this.settings.enabled) return;
+
       if (this.pendingUpdateTimeout) {
         clearTimeout(this.pendingUpdateTimeout);
       }
 
       const now = Date.now();
       const timeSinceLast = now - this.lastPresenceSent;
-      const minInterval = 5000; // Minimal interval 5 detik untuk menghindari rate limit Discord
+      const minInterval = 5000;
 
       let waitTime = delay;
       if (timeSinceLast < minInterval) {
@@ -227,7 +234,7 @@
       let line = 1;
       let col = 1;
       let totalLines = 1;
-      let workspace = this.settings.workspaceOverride || 'cihuynime';
+      let workspace = this.settings.workspaceOverride || '';
 
       try {
         if (window.editorManager && editorManager.activeFile) {
@@ -239,30 +246,31 @@
             extension = parts.pop().toLowerCase();
           }
 
-          const fileUri = file.uri || file.location;
-          if (fileUri) {
-            const pathSegments = fileUri.split('/');
-            if (pathSegments.length > 2) {
-              workspace = this.settings.workspaceOverride || pathSegments[pathSegments.length - 2];
+          // Deteksi Workspace Otomatis dari folder path
+          if (!workspace && (file.uri || file.location)) {
+            const fileUri = file.uri || file.location;
+            const pathSegments = fileUri.split('/').filter(Boolean);
+            if (pathSegments.length > 1) {
+              workspace = pathSegments[pathSegments.length - 2];
             }
           }
 
           const editor = editorManager.editor;
           if (editor) {
-            // Ace Editor
+            // Ace Editor Cursor
             if (typeof editor.getCursorPosition === 'function') {
               const pos = editor.getCursorPosition();
               line = (pos.row || 0) + 1;
               col = (pos.column || 0) + 1;
             } else if (editor.state && editor.state.selection) {
-              // CodeMirror
+              // CodeMirror Cursor
               const pos = editor.state.selection.main.head;
               const lineObj = editor.state.doc.lineAt(pos);
               line = lineObj.number;
               col = pos - lineObj.from + 1;
             }
 
-            // Hitung total lines
+            // Total lines
             if (editor.session && typeof editor.session.getLength === 'function') {
               totalLines = editor.session.getLength();
             } else if (editor.state && editor.state.doc) {
@@ -271,15 +279,14 @@
           }
         }
       } catch (err) {
-        console.warn('[Discord RPC] Error reading file info:', err);
+        console.warn('[Discord RPC] Error reading active file info:', err);
       }
 
-      const lang = LANGUAGE_ASSETS[extension] || {
-        id: ASSET_VSCODE_MAIN,
-        name: extension ? extension.toUpperCase() : 'Code',
-      };
+      if (!workspace) {
+        workspace = 'Acode Project';
+      }
 
-      return { fileName, extension, line, col, totalLines, workspace, lang };
+      return { fileName, extension, line, col, totalLines, workspace };
     }
 
     buildPresencePayload() {
@@ -289,53 +296,50 @@
 
       const appTitle = this.settings.appName || 'Acode';
 
-      // Baris 1: Details
-      let details = `Editing ${fileInfo.fileName}`;
-      if (this.settings.showLineCount && fileInfo.totalLines > 1) {
+      // Baris 1 (Details)
+      let displayFileName = this.settings.privacyMode ? 'Protected File' : fileInfo.fileName;
+      let details = `Editing ${displayFileName}`;
+      if (this.settings.showLineCount && fileInfo.totalLines > 1 && !this.settings.privacyMode) {
         details += ` (${fileInfo.totalLines} lines)`;
       }
 
-      // Baris 2: State
+      // Baris 2 (State)
       let state = `Workspace: ${fileInfo.workspace}`;
-      if (this.settings.showCursorPosition) {
+      if (this.settings.showCursorPosition && !this.settings.privacyMode) {
         state += ` - Ln ${fileInfo.line}, Col ${fileInfo.col}`;
       }
 
-      let largeImage = ASSET_VSCODE_MAIN;
-      let largeText = `${appTitle} - Code Editor on Android`;
-      let smallImage = fileInfo.lang.id;
-      let smallText = `Editing ${fileInfo.lang.name}`;
+      // Pilih Asset Logo Acode
+      const largeImageId =
+        this.settings.logoStyle === 'transparent' ? ACODE_ASSETS.transparent : ACODE_ASSETS.blue_bg;
+
+      let largeText = `${appTitle} - Powerful Code Editor for Android`;
 
       if (this.isIdle) {
         details = `Idling in ${fileInfo.workspace}`;
         state = 'Idle';
-        largeImage = ASSET_VSCODE_IDLE;
         largeText = `${appTitle} (Idle)`;
-        smallImage = null;
-        smallText = null;
       }
+
+      // Activity Type: 0 = Playing, 2 = Listening to, 3 = Watching, 5 = Competing
+      const activityType = parseInt(this.settings.activityType || 0, 10);
 
       const activity = {
         name: appTitle,
-        type: 0,
-        application_id: this.settings.applicationId || VSCODE_APP_ID,
+        type: activityType,
+        application_id: this.settings.applicationId || DEFAULT_APP_ID,
         details: details,
         state: state,
         timestamps: {
           start: startTimestamp,
         },
         assets: {
-          large_image: largeImage,
+          large_image: largeImageId,
           large_text: largeText,
         },
       };
 
-      if (smallImage) {
-        activity.assets.small_image = smallImage;
-        activity.assets.small_text = smallText;
-      }
-
-      // Tombol Profil / Repository
+      // Tombol Interaktif
       const buttons = [];
       const buttonUrls = [];
 
@@ -354,7 +358,7 @@
     }
 
     sendPresenceUpdate() {
-      if (!this.isConnected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      if (!this.settings.enabled || !this.isConnected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
         return;
       }
 
@@ -373,7 +377,7 @@
         this.ws.send(JSON.stringify(payload));
         this.lastPresenceSent = Date.now();
       } catch (err) {
-        console.error('[Discord RPC] Gagal mengirim payload presence:', err);
+        console.error('[Discord RPC] Gagal mengirim paket presence:', err);
       }
     }
 
@@ -382,13 +386,13 @@
         this.disconnect();
       }
 
-      if (!this.settings.token) return;
+      if (!this.settings.enabled || !this.settings.token) return;
 
       try {
         this.ws = new WebSocket('wss://gateway.discord.gg/?v=9&encoding=json');
 
         this.ws.onopen = () => {
-          console.log('[Discord RPC] Terhubung ke Discord Gateway.');
+          console.log('[Discord RPC] WebSocket terhubung ke Discord Gateway.');
         };
 
         this.ws.onmessage = (event) => {
@@ -400,16 +404,17 @@
         };
 
         this.ws.onclose = (event) => {
-          console.warn(`[Discord RPC] Koneksi tertutup (${event.code}). Menghubungkan ulang...`);
+          console.warn(`[Discord RPC] Koneksi ditutup (${event.code}).`);
           this.cleanupHeartbeat();
           this.isConnected = false;
 
+          // Reconnect otomatis jika masih aktif
           if (this.settings.enabled && this.settings.token) {
             setTimeout(() => this.connect(), 8000);
           }
         };
       } catch (e) {
-        console.error('[Discord RPC] Inisialisasi WebSocket gagal:', e);
+        console.error('[Discord RPC] Gagal menginisialisasi WebSocket:', e);
       }
     }
 
@@ -428,11 +433,11 @@
           case 11: // Heartbeat ACK
             break;
 
-          case 0: // Event Dispatch
+          case 0: // Dispatch
             if (msg.t === 'READY') {
               this.isConnected = true;
               const user = msg.d.user;
-              this.showToast(`✨ Discord RPC Aktif! (${user.username})`);
+              this.showToast(`✨ Acode Discord RPC Aktif! (${user.username})`);
               console.log(`[Discord RPC] Siap sebagai ${user.username}`);
               this.sendPresenceUpdate();
             }
@@ -445,7 +450,7 @@
             break;
         }
       } catch (err) {
-        console.error('[Discord RPC] Error parsing gateway:', err);
+        console.error('[Discord RPC] Error parsing gateway message:', err);
       }
     }
 
@@ -522,7 +527,7 @@
       const prompt = window.acode && acode.require('prompt');
 
       if (multiPrompt) {
-        const res = await multiPrompt('Discord RPC Configuration (Acode)', [
+        const res = await multiPrompt('Acode Discord RPC Settings', [
           {
             id: 'token',
             placeholder: 'Discord User Token',
@@ -531,18 +536,18 @@
             text: 'Discord User Token:',
           },
           {
-            id: 'appName',
-            placeholder: 'Acode atau Visual Studio Code',
+            id: 'activityType',
+            placeholder: '0 = Playing, 2 = Listening to',
             type: 'text',
-            value: this.settings.appName || 'Acode',
-            text: 'Nama Status Aplikasi:',
+            value: String(this.settings.activityType || 0),
+            text: 'Mode Tipe Status (0: Playing, 2: Listening to):',
           },
           {
             id: 'repoUrl',
-            placeholder: 'https://github.com/myzert/cihuynime',
+            placeholder: 'https://github.com/myzert/acode-discord-rpc',
             type: 'text',
             value: this.settings.repoUrl,
-            text: 'GitHub Repository URL (Tombol 1):',
+            text: 'Link Repository (Tombol Profil):',
           },
           {
             id: 'workspaceOverride',
@@ -553,7 +558,7 @@
           },
           {
             id: 'hoursOffset',
-            placeholder: '0 (atau 200 buat flexing timer)',
+            placeholder: '0 (atau 200 untuk flexing timer)',
             type: 'number',
             value: this.settings.hoursOffset || 0,
             text: 'Hours Offset (Jam Mundur):',
@@ -562,13 +567,13 @@
 
         if (res) {
           this.settings.token = (res.token || '').trim();
-          this.settings.appName = (res.appName || 'Acode').trim();
+          this.settings.activityType = parseInt(res.activityType || 0, 10);
           this.settings.repoUrl = (res.repoUrl || '').trim();
           this.settings.workspaceOverride = (res.workspaceOverride || '').trim();
           this.settings.hoursOffset = parseFloat(res.hoursOffset) || 0;
           this.saveSettings();
 
-          this.showToast('Pengaturan disimpan! Menyambung ulang...');
+          this.showToast('Pengaturan disimpan! Menyambung kembali...');
           this.connect();
         }
       } else if (prompt) {
@@ -576,21 +581,14 @@
         if (token !== undefined) {
           this.settings.token = token.trim();
           this.saveSettings();
-          this.showToast('Token disimpan! Menyambung...');
-          this.connect();
-        }
-      } else {
-        const token = window.prompt('Masukkan Discord User Token:', this.settings.token);
-        if (token !== null) {
-          this.settings.token = token.trim();
-          this.saveSettings();
+          this.showToast('Token disimpan!');
           this.connect();
         }
       }
     }
 
     destroy() {
-      this.disconnect();
+      this.clearPresenceAndDisconnect();
     }
   }
 

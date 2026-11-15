@@ -1,64 +1,72 @@
 # Discord Rich Presence for Acode (Android) 📱✨
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/myzert/acode-discord-rpc)
-[![Platform](https://img.shields.io/badge/platform-Acode%20(Android)-teal.svg)](https://acode.foxdebug.com)
-[![Author](https://img.shields.io/badge/author-myzert-purple.svg)](https://github.com/myzert)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+Plugin Rich Presence (RPC) untuk aplikasi editor kode Android **Acode**, menampilkan aktivitas coding kamu secara langsung di Discord dengan status dan logo resmi **Acode**!
 
-Plugin resmi untuk aplikasi editor kode Android **Acode**, yang memunculkan status aktivitas coding kamu di Discord secara realtime dengan status **Acode**!
+---
+
+## 📖 Cara Kerja Arsitektur (Technical Overview)
+
+Banyak yang bertanya mengapa aplikasi di Android tidak bisa menggunakan cara RPC konvensional:
+1. **Di PC (Desktop):** Aplikasi Discord Desktop membuka IPC socket lokal (`discord-ipc-0` atau port `127.0.0.1:6463`). Game atau teks editor di PC cukup melempar data ke port lokal tersebut tanpa perlu login token.
+2. **Di HP (Android):** Aplikasi resmi Discord Android **tidak pernah membuka port atau socket lokal**. Selain itu, Discord belum menyediakan Web REST API publik untuk mengubah status profil via OAuth2 dari jarak jauh.
+3. **Solusi Plugin Ini:**
+   Plugin ini menggunakan **Native WebSocket** di dalam WebView Acode untuk terhubung langsung ke **Discord Gateway** (`wss://gateway.discord.gg`). Menggunakan identifikasi aman (*Opcode 2*) dan pengiriman status (*Opcode 3*), plugin ini dapat memancarkan status coding secara mandiri, hemat daya, dan realtime tanpa memerlukan Node.js atau Termux tambahan.
 
 ---
 
 ## 🌟 Fitur Utama
 
-* **📱 Status Acode Otentik:**
-  * Di Discord tampil sebagai `Acode` (atau bisa diganti ke `Visual Studio Code`).
-  * Large Text: `Acode - Code Editor on Android`.
-* **📂 Deteksi Bahasa Otomatis (50+ Bahasa):**
-  * Otomatis mengenali ekstensi file: JavaScript, TypeScript, Python, HTML, CSS, C/C++, Java, Rust, Go, PHP, Kotlin, Dart, Zig, Docker, JSON, Markdown, YAML, dan banyak lagi.
+* **🎨 Logo & Branding Resmi Acode:**
+  * Terintegrasi dengan Bot Application Acode ID: `1571462947983593595`.
+  * Memiliki 2 opsi logo: `acode-ada-bg-biru` dan `acode-bg-transparan`.
+* **🎧 Mode Fleksibel (Playing vs Listening):**
+  * Kamu bisa memilih menampilkan status sebagai **Playing Acode** (Type 0) atau **Listening to Acode** (Type 2).
+* **🔴 Fitur Matikan / Nyalakan RPC (Toggle Switch):**
+  * Tekan shortcut **`Ctrl + Alt + T`** untuk mematikan atau mengaktifkan status RPC secara instan tanpa perlu uninstall plugin.
+  * Saat dimatikan, plugin langsung menghapus aktivitas dari profil Discord kamu.
+* **📂 Deteksi Workspace Otomatis:**
+  * Secara cerdas mendeteksi nama folder project tempat file kamu berada.
+* **🔗 Tombol Interaktif Profil:**
+  * Default link mengarah ke repository RPC resmi: `https://github.com/myzert/acode-discord-rpc`.
+  * Bisa kamu ganti dengan link repository GitHub project yang sedang kamu kerjakan.
+  * Tombol kedua mengarah ke website resmi Acode Editor.
 * **⚡ Realtime File, Line & Column Tracking:**
-  * **Details:** `Editing index.js (154 lines)`
-  * **State:** `Workspace: cihuynime - Ln 42, Col 18`
+  * **Baris 1:** `Editing index.js (154 lines)` (menampilkan nama file beserta total baris).
+  * **Baris 2:** `Workspace: acode-discord-rpc - Ln 42, Col 18`.
 * **💤 Deteksi Idle Otomatis:**
-  * Jika kamu istirahat atau tidak mengetik selama 5 menit, status otomatis berubah jadi `Idling in cihuynime`.
-* **🔗 Tombol Interaktif di Profil:**
-  * **Tombol 1:** Link langsung ke repository GitHub kamu (misal: [github.com/myzert/cihuynime](https://github.com/myzert/cihuynime)).
-  * **Tombol 2:** Link ke Acode Editor (`https://acode.foxdebug.com`).
+  * Jika kamu meninggalkan editor selama 5 menit tanpa mengetik, status otomatis beralih menjadi `Idling`.
 * **⏳ Hours Offset (Flexing Timer):**
-  * Fitur iseng untuk mengatur timer mundur (misal: 200 jam yang lalu) agar terlihat ngoding marathon tanpa henti!
-* **⚙️ Built-in Settings Menu:**
-  * Atur token, ganti nama status, link repository, dan offset waktu langsung di dalam aplikasi Acode via shortcut `Ctrl + Alt + D`.
-* **🔋 Super Ringan & Hemat Daya:**
-  * Menggunakan WebSocket native Android WebView tanpa memerlukan Termux atau Node.js tambahan saat dijalankan.
+  * Fitur tambahan untuk mengatur start timer mundur (misal 200 jam yang lalu) agar terlihat ngoding marathon!
 
 ---
 
-## 📥 Cara Pasang di Aplikasi Acode
+## ⌨️ Daftar Shortcut / Command Palette
 
-1. Unduh file `acode-discord-rpc.zip` dari halaman [Releases](https://github.com/myzert/acode-discord-rpc/releases) (atau ambil dari folder `Download` di HP kamu).
+Buka Command Palette di Acode atau gunakan shortcut berikut:
+* **`Ctrl + Alt + D`** : Membuka jendela pengaturan (*Settings Dialog*).
+* **`Ctrl + Alt + T`** : Menyalakan / Mematikan status Discord RPC secara instan.
+* Perintah **`discord_rpc_reconnect`** : Memaksa koneksi ulang ke Discord Gateway.
+
+---
+
+## 📥 Panduan Instalasi di Acode
+
+1. Unduh file **`acode-discord-rpc.zip`** (tersedia di folder Download HP kamu).
 2. Buka aplikasi **Acode**.
-3. Masuk ke **Settings (Pengaturan)** ➔ **Plugins**.
-4. Tekan tombol titik tiga `⋮` di pojok kanan atas ➔ pilih **Install from storage**.
-5. Pilih file `acode-discord-rpc.zip`.
-6. Selesai! Plugin langsung aktif.
+3. Buka menu **Settings (Pengaturan)** ➔ **Plugins**.
+4. Tekan ikon titik tiga `⋮` di kanan atas ➔ pilih **Install from storage**.
+5. Pilih file **`acode-discord-rpc.zip`**.
+6. Tekan **`Ctrl + Alt + D`** untuk memasukkan User Token akun Discord kamu.
+7. Selesai! Status Acode langsung live di profil Discord kamu.
 
 ---
 
-## ⚙️ Cara Konfigurasi
-
-1. Buka file apa saja di Acode.
-2. Buka Command Palette (atau tekan `Ctrl + Alt + D`).
-3. Masukkan **Discord User Token** kamu.
-4. Masukkan link repository kamu (default: `https://github.com/myzert/cihuynime`).
-5. Simpan pengaturan. Status kamu di Discord akan langsung live!
+## 🔒 Privasi dan Keamanan
+* Token Discord kamu hanya disimpan secara lokal di memori privat HP kamu (`localStorage` Acode).
+* Token tidak pernah dikirim ke server pihak ketiga mana pun dan tidak masuk ke dalam repository GitHub.
 
 ---
 
-## ⚠️ Keamanan Token (PENTING)
-Token Discord kamu hanya disimpan secara lokal di dalam memori penyimpanan Acode (`localStorage`) di HP kamu sendiri. Jangan pernah membagikan token ini kepada siapa pun!
-
----
-
-## 👨‍💻 Author & Lisensi
+## 👨‍💻 Kontributor
 Dibuat dengan ❤️ oleh **[myzert](https://github.com/myzert)**.  
-Lisensi: MIT.
+Repository: [github.com/myzert/acode-discord-rpc](https://github.com/myzert/acode-discord-rpc)
