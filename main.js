@@ -75,11 +75,11 @@
       this.lastPresenceSent = 0;
       this.pendingUpdateTimeout = null;
 
-      // Konfigurasi Default Lengkap
+      // Konfigurasi Default
       this.settings = {
         enabled: true,
         token: '',
-        appName: 'Acode', // 'Acode' atau 'Visual Studio Code'
+        appName: 'Acode',
         applicationId: VSCODE_APP_ID,
         repoUrl: 'https://github.com/myzert/cihuynime',
         repoLabel: 'View Repository',
@@ -94,26 +94,30 @@
     async init($page) {
       this.loadSettings();
 
-      // Daftarkan shortcut & command palette
-      if (window.editorManager && editorManager.editor) {
-        editorManager.editor.commands.addCommand({
-          name: 'discord_rpc_settings',
-          bindKey: { win: 'Ctrl-Alt-D', mac: 'Command-Alt-D' },
-          exec: () => this.showSettingsDialog(),
-        });
+      // Daftarkan command di Command Palette
+      try {
+        if (window.editorManager && editorManager.editor && editorManager.editor.commands) {
+          editorManager.editor.commands.addCommand({
+            name: 'discord_rpc_settings',
+            bindKey: { win: 'Ctrl-Alt-D', mac: 'Command-Alt-D' },
+            exec: () => this.showSettingsDialog(),
+          });
+        }
+      } catch (e) {
+        console.warn('[Discord RPC] Gagal mendaftarkan shortcut editor:', e);
       }
 
       this.registerHeaderIcon();
       this.bindEditorEvents();
 
-      // Cek status idle setiap 30 detik
+      // Timer cek idle tiap 30 detik
       setInterval(() => this.checkIdleStatus(), 30000);
 
-      // Otomatis konek jika token tersedia
+      // Konek otomatis jika token tersedia
       if (this.settings.enabled && this.settings.token) {
         this.connect();
       } else if (!this.settings.token) {
-        this.showToast('Discord RPC: Tekan Ctrl+Alt+D untuk mengatur Token Discord kamu.');
+        this.showToast('Discord RPC: Tekan Ctrl+Alt+D untuk mengatur Token Discord.');
       }
     }
 
@@ -138,7 +142,6 @@
 
     registerHeaderIcon() {
       if (window.acode && typeof acode.addIcon === 'function') {
-        // Icon Acode Teal / Cyan
         acode.addIcon(
           'acode-discord-icon',
           'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%2300B4D8"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>'
@@ -155,14 +158,39 @@
         this.schedulePresenceUpdate(delay);
       };
 
-      editorManager.on('switch-file', () => triggerActivity(1500));
-      editorManager.on('rename-file', () => triggerActivity(1500));
-      editorManager.on('save-file', () => triggerActivity(1000));
-
-      if (editorManager.editor) {
-        editorManager.editor.on('change', () => triggerActivity(4000));
-        editorManager.editor.selection.on('changeCursor', () => triggerActivity(8000));
+      // Hook event editorManager aman tanpa crash
+      try {
+        if (typeof editorManager.on === 'function') {
+          editorManager.on('switch-file', () => triggerActivity(1500));
+          editorManager.on('rename-file', () => triggerActivity(1500));
+          editorManager.on('save-file', () => triggerActivity(1000));
+          editorManager.on('update', () => triggerActivity(3000));
+        }
+      } catch (err) {
+        console.warn('[Discord RPC] editorManager hook error:', err);
       }
+
+      // Hook Ace / CodeMirror editor changes secara defensif
+      try {
+        const editor = editorManager.editor;
+        if (editor) {
+          // Ace EditSession
+          if (editor.session && typeof editor.session.on === 'function') {
+            editor.session.on('change', () => triggerActivity(4000));
+          } else if (typeof editor.addEventListener === 'function') {
+            editor.addEventListener('change', () => triggerActivity(4000));
+          }
+        }
+      } catch (err) {
+        console.warn('[Discord RPC] Editor change hook error:', err);
+      }
+
+      // Polling berkala setiap 15 detik untuk update line & col saat koding
+      setInterval(() => {
+        if (this.isConnected && !this.isIdle) {
+          this.schedulePresenceUpdate(0);
+        }
+      }, 15000);
     }
 
     checkIdleStatus() {
@@ -181,7 +209,7 @@
 
       const now = Date.now();
       const timeSinceLast = now - this.lastPresenceSent;
-      const minInterval = 5000; // Rate limit protection: minimal 5 detik antar update
+      const minInterval = 5000; // Minimal interval 5 detik untuk menghindari rate limit Discord
 
       let waitTime = delay;
       if (timeSinceLast < minInterval) {
@@ -201,30 +229,49 @@
       let totalLines = 1;
       let workspace = this.settings.workspaceOverride || 'cihuynime';
 
-      if (window.editorManager && editorManager.activeFile) {
-        const file = editorManager.activeFile;
-        fileName = file.name || 'Untitled';
+      try {
+        if (window.editorManager && editorManager.activeFile) {
+          const file = editorManager.activeFile;
+          fileName = file.name || file.filename || 'Untitled';
 
-        const parts = fileName.split('.');
-        if (parts.length > 1) {
-          extension = parts.pop().toLowerCase();
-        }
+          const parts = fileName.split('.');
+          if (parts.length > 1) {
+            extension = parts.pop().toLowerCase();
+          }
 
-        if (file.uri) {
-          const pathSegments = file.uri.split('/');
-          if (pathSegments.length > 2) {
-            workspace = this.settings.workspaceOverride || pathSegments[pathSegments.length - 2];
+          const fileUri = file.uri || file.location;
+          if (fileUri) {
+            const pathSegments = fileUri.split('/');
+            if (pathSegments.length > 2) {
+              workspace = this.settings.workspaceOverride || pathSegments[pathSegments.length - 2];
+            }
+          }
+
+          const editor = editorManager.editor;
+          if (editor) {
+            // Ace Editor
+            if (typeof editor.getCursorPosition === 'function') {
+              const pos = editor.getCursorPosition();
+              line = (pos.row || 0) + 1;
+              col = (pos.column || 0) + 1;
+            } else if (editor.state && editor.state.selection) {
+              // CodeMirror
+              const pos = editor.state.selection.main.head;
+              const lineObj = editor.state.doc.lineAt(pos);
+              line = lineObj.number;
+              col = pos - lineObj.from + 1;
+            }
+
+            // Hitung total lines
+            if (editor.session && typeof editor.session.getLength === 'function') {
+              totalLines = editor.session.getLength();
+            } else if (editor.state && editor.state.doc) {
+              totalLines = editor.state.doc.lines;
+            }
           }
         }
-
-        if (editorManager.editor) {
-          const pos = editorManager.editor.getCursorPosition();
-          line = (pos.row || 0) + 1;
-          col = (pos.column || 0) + 1;
-          if (editorManager.editor.session) {
-            totalLines = editorManager.editor.session.getLength() || 1;
-          }
-        }
+      } catch (err) {
+        console.warn('[Discord RPC] Error reading file info:', err);
       }
 
       const lang = LANGUAGE_ASSETS[extension] || {
@@ -240,16 +287,15 @@
       const offsetMs = (this.settings.hoursOffset || 0) * 3600 * 1000;
       const startTimestamp = this.sessionStartTime - offsetMs;
 
-      // Status Title: Acode
       const appTitle = this.settings.appName || 'Acode';
 
-      // Baris 1 (Details)
+      // Baris 1: Details
       let details = `Editing ${fileInfo.fileName}`;
       if (this.settings.showLineCount && fileInfo.totalLines > 1) {
         details += ` (${fileInfo.totalLines} lines)`;
       }
 
-      // Baris 2 (State)
+      // Baris 2: State
       let state = `Workspace: ${fileInfo.workspace}`;
       if (this.settings.showCursorPosition) {
         state += ` - Ln ${fileInfo.line}, Col ${fileInfo.col}`;
@@ -289,7 +335,7 @@
         activity.assets.small_text = smallText;
       }
 
-      // Tombol Interaktif
+      // Tombol Profil / Repository
       const buttons = [];
       const buttonUrls = [];
 
@@ -327,7 +373,7 @@
         this.ws.send(JSON.stringify(payload));
         this.lastPresenceSent = Date.now();
       } catch (err) {
-        console.error('[Discord RPC] Gagal mengirim packet presence:', err);
+        console.error('[Discord RPC] Gagal mengirim payload presence:', err);
       }
     }
 
