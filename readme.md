@@ -1,11 +1,14 @@
-# Discord Rich Presence for Acode
+# Discord Rich Presence for Acode (Unofficial)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform: Acode (Android)](https://img.shields.io/badge/Platform-Acode%20(Android)-teal.svg)](https://acode.app)
 [![Release](https://img.shields.io/badge/Release-v1.2.0-blue.svg)](https://github.com/myzert/acode-discord-rpc/releases)
 [![Author](https://img.shields.io/badge/Author-myzert-purple.svg)](https://github.com/myzert)
 
-An authentic Discord Rich Presence (RPC) plugin for the [Acode](https://acode.app) code editor on Android. Displays real-time mobile coding activity on your Discord profile with genuine Visual Studio Code layout fidelity and official Acode branding.
+An authentic, unofficial Discord Rich Presence (RPC) plugin for the [Acode](https://acode.app) code editor on Android. Displays real-time mobile coding activity on your Discord profile with genuine Visual Studio Code layout fidelity.
+
+> [!NOTE]
+> This is an unofficial, community-developed plugin and is not affiliated with, maintained by, or endorsed by Acode or Discord.
 
 ---
 
@@ -26,7 +29,7 @@ This plugin establishes a direct, lightweight connection to the Discord Gateway 
 ## Features
 
 ### Visual Studio Code Layout Fidelity
-* **Application Identity:** Appears as `Acode` with the official editor logo.
+* **Application Identity:** Appears as `Acode` with the editor logo.
 * **Details Line:** Formatted as `Editing <filename>`.
 * **State Line:** Formatted cleanly as `Workspace: <workspace>`.
 * **Action Buttons:** Includes a dynamic `View Repository` button linking directly to your project's repository and a `Get Acode` button linking to `https://acode.app`.

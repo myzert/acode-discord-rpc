@@ -1,6 +1,6 @@
 /**
- * Discord Rich Presence for Acode (Android)
- * Authentic Visual Studio Code layout, featuring official Acode branding,
+ * Unofficial Discord Rich Presence for Acode (Android)
+ * Authentic Visual Studio Code layout, featuring Acode branding,
  * precise workspace detection via Acode API, dynamic language badges, and idle status.
  * Author: myzert (https://github.com/myzert)
  * Repository: https://github.com/myzert/acode-discord-rpc
