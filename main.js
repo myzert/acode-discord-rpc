@@ -1,7 +1,7 @@
 /**
  * Discord Rich Presence for Acode (Android)
- * Authentic Visual Studio Code layout, featuring official Acode branding
- * with real dynamic programming language badges and idle status icons.
+ * Authentic Visual Studio Code layout, featuring official Acode branding,
+ * precise workspace detection via Acode API, dynamic language badges, and idle status.
  * Author: myzert (https://github.com/myzert)
  * Repository: https://github.com/myzert/acode-discord-rpc
  */
@@ -131,7 +131,7 @@
 
     loadSettings() {
       try {
-        const saved = localStorage.getItem('myzert_acode_discord_rpc_v6');
+        const saved = localStorage.getItem('myzert_acode_discord_rpc_v7');
         if (saved) {
           this.settings = { ...this.settings, ...JSON.parse(saved) };
         }
@@ -142,7 +142,7 @@
 
     saveSettings() {
       try {
-        localStorage.setItem('myzert_acode_discord_rpc_v6', JSON.stringify(this.settings));
+        localStorage.setItem('myzert_acode_discord_rpc_v7', JSON.stringify(this.settings));
       } catch (e) {
         console.error('[Discord RPC] Gagal menyimpan setting:', e);
       }
@@ -220,7 +220,6 @@
         this.lastUserActivity = Date.now();
         if (this.isIdle) {
           this.isIdle = false;
-          console.log('[Discord RPC] User aktif kembali dari idle.');
         }
         this.schedulePresenceUpdate(delay);
       };
@@ -261,7 +260,6 @@
       const idleLimitMs = (this.settings.idleTimeoutMinutes || 5) * 60 * 1000;
       if (Date.now() - this.lastUserActivity > idleLimitMs && !this.isIdle) {
         this.isIdle = true;
-        console.log('[Discord RPC] User idle. Mengubah status ke Idle Logo & Zzz...');
         this.schedulePresenceUpdate(0);
       }
     }
@@ -285,6 +283,57 @@
       this.pendingUpdateTimeout = setTimeout(() => {
         this.sendPresenceUpdate();
       }, waitTime);
+    }
+
+    /**
+     * Deteksi nama Workspace yang akurat & pas:
+     * 1. Dari sidebar folder Acode resmi (window.addedFolder)
+     * 2. Dari root .git folder
+     * 3. Dari parsing path Android SAF yang didecode
+     */
+    detectWorkspace(fileUri) {
+      if (this.settings.workspaceOverride) {
+        return this.settings.workspaceOverride;
+      }
+
+      // 1. Cek folder resmi di sidebar Acode
+      try {
+        const folders = window.addedFolder || (window.openFolder && window.openFolder.folders);
+        if (folders && Array.isArray(folders) && folders.length > 0) {
+          if (fileUri) {
+            const matched = folders.find((f) => f.url && fileUri.startsWith(f.url));
+            if (matched && (matched.title || matched.name)) {
+              return matched.title || matched.name;
+            }
+          }
+          if (folders[0] && (folders[0].title || folders[0].name)) {
+            return folders[0].title || folders[0].name;
+          }
+        }
+      } catch (e) {
+        console.warn('[Discord RPC] Error reading addedFolder:', e);
+      }
+
+      // 2. Cek dari root .git jika ada
+      if (fileUri && this.gitCache[fileUri] && this.gitCache[fileUri].workspace) {
+        return this.gitCache[fileUri].workspace;
+      }
+
+      // 3. Fallback parsing path file (decode URI untuk Android SAF)
+      if (fileUri) {
+        try {
+          const decoded = decodeURIComponent(fileUri);
+          const cleanPath = decoded.replace(/^content:\/\/[^/]+\//, '').replace(/^file:\/\//, '');
+          const segments = cleanPath
+            .split('/')
+            .filter((s) => s && !s.includes(':') && s !== 'storage' && s !== 'emulated' && s !== '0');
+          if (segments.length > 1) {
+            return segments[segments.length - 2];
+          }
+        } catch (e) {}
+      }
+
+      return 'Acode Workspace';
     }
 
     async detectGitRepository(fileUri) {
@@ -362,7 +411,6 @@
       let line = 1;
       let col = 1;
       let fileUri = null;
-      let workspace = this.settings.workspaceOverride || '';
       let detectedRepoUrl = null;
       let gitBranch = null;
 
@@ -380,14 +428,8 @@
           if (fileUri) {
             const gitInfo = await this.detectGitRepository(fileUri);
             if (gitInfo) {
-              if (!workspace) workspace = gitInfo.workspace;
               detectedRepoUrl = gitInfo.repoUrl;
               gitBranch = gitInfo.branch;
-            } else if (!workspace) {
-              const segments = fileUri.split('/').filter(Boolean);
-              if (segments.length > 1) {
-                workspace = segments[segments.length - 2];
-              }
             }
           }
 
@@ -409,12 +451,11 @@
         console.warn('[Discord RPC] Error reading file info:', err);
       }
 
-      if (!workspace) {
-        workspace = 'Acode Project';
-      }
+      // Workspace deteksi akurat
+      const workspace = this.detectWorkspace(fileUri);
 
       const langData = LANGUAGE_MAP[extension] || {
-        id: '1359299371832705175', // fallback ke icon text document
+        id: '1359299371832705175',
         name: extension ? extension.toUpperCase() : 'Plain Text',
       };
 
@@ -447,9 +488,6 @@
       let smallText = `Editing ${fileInfo.langData.name}`;
 
       if (this.isIdle) {
-        // STATUS SAAT IDLE:
-        // Logo Besar: Idle Sleeping Icon
-        // Logo Kecil: Acode Editor Badge
         details = `Idling in ${fileInfo.workspace}`;
         state = 'Zzz...';
         largeImage = `mp:app-assets/383226320970055681/${ASSET_IDLE}.png`;
@@ -457,9 +495,6 @@
         smallImage = defaultAcodeLogo;
         smallText = `${appTitle} Editor`;
       } else {
-        // STATUS SAAT CODING (PERSIS VS CODE):
-        // Baris 1: Editing <filename>
-        // Baris 2: Workspace: <workspace> [<branch>] - Ln <line>, Col <col>
         const displayFileName = this.settings.privacyMode ? 'Protected File' : fileInfo.fileName;
         details = `Editing ${displayFileName}`;
 
@@ -494,7 +529,6 @@
         activity.assets.small_text = smallText;
       }
 
-      // Tombol Interaktif
       const buttons = [];
       const buttonUrls = [];
 

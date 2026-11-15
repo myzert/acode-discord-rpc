@@ -4,20 +4,18 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 cd "$DIR"
 
-ZIP_NAME="acode-discord-rpc.zip"
+# Hapus zip lama
+rm -f plugin.zip acode-discord-rpc.zip
 
-# Hapus zip lama jika ada
-rm -f "$ZIP_NAME"
+# Buat plugin.zip (Format standar resmi Acode Registry)
+zip -r plugin.zip plugin.json main.js icon.png readme.md
 
-# Zip file plugin yang dibutuhkan Acode
-zip -r "$ZIP_NAME" plugin.json main.js icon.png readme.md
+# Salin juga sebagai acode-discord-rpc.zip untuk instalasi manual
+cp plugin.zip acode-discord-rpc.zip
 
 echo "=========================================="
-echo "✅ Plugin berhasil dibuild: $DIR/$ZIP_NAME"
+echo "✅ Plugin berhasil dibuild:"
+echo "   - $DIR/plugin.zip (Acode Store Format)"
+echo "   - $DIR/acode-discord-rpc.zip (Manual Install)"
 echo "=========================================="
-echo "Ukuran file: $(du -h "$ZIP_NAME" | cut -f1)"
-echo ""
-echo "Cara install di Acode:"
-echo "1. Buka Acode -> Settings -> Plugins"
-echo "2. Klik menu titik tiga (⋮) -> 'Install from storage'"
-echo "3. Pilih file $ZIP_NAME"
+echo "Ukuran: $(du -h plugin.zip | cut -f1)"

@@ -1,0 +1,24 @@
+name: Publish to Acode
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build plugin package
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: Publish to Acode Plugin Registry
+        uses: Acode-Foundation/publish-plugin@v1
+        with:
+          api-key: ${{ secrets.ACODE_API_KEY }}
+          create-if-missing: true
