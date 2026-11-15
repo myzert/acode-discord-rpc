@@ -1,0 +1,23 @@
+{
+  "id": "myzert.discord.rpc",
+  "name": "Discord Rich Presence (VS Code)",
+  "main": "main.js",
+  "version": "1.0.0",
+  "readme": "readme.md",
+  "icon": "icon.png",
+  "files": [],
+  "price": 0,
+  "description": "Show your real-time coding activity in Discord with 100% authentic Visual Studio Code Rich Presence directly from Acode on Android!",
+  "keywords": [
+    "discord",
+    "rpc",
+    "rich presence",
+    "vscode",
+    "status",
+    "activity"
+  ],
+  "author": {
+    "name": "myzert",
+    "github": "myzert"
+  }
+}
