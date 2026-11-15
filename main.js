@@ -1,7 +1,7 @@
 /**
  * Discord Rich Presence for Acode (Android)
- * Full-featured, native Discord RPC with authentic Acode branding.
- * Features auto-detection of Git repository, branch, and language details.
+ * Authentic Visual Studio Code layout, featuring official Acode branding
+ * with real dynamic programming language badge icons.
  * Author: myzert (https://github.com/myzert)
  * Repository: https://github.com/myzert/acode-discord-rpc
  */
@@ -10,65 +10,64 @@
   const PLUGIN_ID = 'myzert.acode.discord.rpc';
 
   // ID Aplikasi Acode Resmi & Asset Logo
-  const DEFAULT_APP_ID = '1571462947983593595';
+  const ACODE_APP_ID = '1571462947983593595';
   const ACODE_ASSETS = {
     blue_bg: '1571468057010905220', // acode-ada-bg-biru
     transparent: '1571468057639915630', // acode-bg-transparan
   };
 
-  // Kamus Bahasa Pemrograman
-  const EXT_TO_LANG = {
-    // JavaScript / Web Frameworks
-    js: 'JavaScript',
-    mjs: 'JavaScript',
-    cjs: 'JavaScript',
-    jsx: 'React JSX',
-    ts: 'TypeScript',
-    tsx: 'React TSX',
-    vue: 'Vue',
-    svelte: 'Svelte',
-    html: 'HTML',
-    htm: 'HTML',
-    css: 'CSS',
-    scss: 'SCSS',
-    sass: 'SASS',
-    less: 'Less',
+  // Official Language Asset IDs (50+ Bahasa Pemrograman untuk Small Image Badge)
+  const LANGUAGE_MAP = {
+    // JavaScript / TypeScript / Web
+    js: { id: '1359299016025964687', name: 'JavaScript' },
+    mjs: { id: '1359299016025964687', name: 'JavaScript' },
+    cjs: { id: '1359299016025964687', name: 'JavaScript' },
+    jsx: { id: '1359299015983894651', name: 'React JSX' },
+    ts: { id: '1359299427059236984', name: 'TypeScript' },
+    tsx: { id: '1359299426262319284', name: 'React TSX' },
+    vue: { id: '1359299519573131545', name: 'Vue' },
+    svelte: { id: '1359299371639771367', name: 'Svelte' },
+    html: { id: '1359298971646038066', name: 'HTML' },
+    htm: { id: '1359298971646038066', name: 'HTML' },
+    css: { id: '1359298399085527152', name: 'CSS' },
+    scss: { id: '1359299338932584549', name: 'SCSS' },
+    less: { id: '1359299073168904372', name: 'Less' },
 
     // Backend & Languages
-    php: 'PHP',
-    phtml: 'PHP',
-    py: 'Python',
-    ipynb: 'Jupyter',
-    rb: 'Ruby',
-    java: 'Java',
-    kt: 'Kotlin',
-    kts: 'Kotlin',
-    cs: 'C#',
-    c: 'C',
-    h: 'C Header',
-    cpp: 'C++',
-    cc: 'C++',
-    cxx: 'C++',
-    hpp: 'C++ Header',
-    rs: 'Rust',
-    go: 'Go',
-    dart: 'Dart',
-    lua: 'Lua',
-    zig: 'Zig',
+    php: { id: '1359299228186312897', name: 'PHP' },
+    phtml: { id: '1359299228186312897', name: 'PHP' },
+    py: { id: '1359299282380918886', name: 'Python' },
+    ipynb: { id: '1359299015988084927', name: 'Jupyter' },
+    rb: { id: '1359299282435571752', name: 'Ruby' },
+    java: { id: '1359298971738050570', name: 'Java' },
+    kt: { id: '1359299073122766999', name: 'Kotlin' },
+    kts: { id: '1359299073122766999', name: 'Kotlin' },
+    cs: { id: '1359298403259121674', name: 'C#' },
+    c: { id: '1359298290058789037', name: 'C' },
+    h: { id: '1359298290058789037', name: 'C Header' },
+    cpp: { id: '1359298399379390484', name: 'C++' },
+    cc: { id: '1359298399379390484', name: 'C++' },
+    cxx: { id: '1359298399379390484', name: 'C++' },
+    hpp: { id: '1359298399379390484', name: 'C++ Header' },
+    rs: { id: '1359299338907549887', name: 'Rust' },
+    go: { id: '1359298884043800586', name: 'Go' },
+    dart: { id: '1359298399483990157', name: 'Dart' },
+    lua: { id: '1359299073148059749', name: 'Lua' },
+    zig: { id: '1359299561897721957', name: 'Zig' },
 
     // Shell & Config
-    sh: 'Shell',
-    bash: 'Bash',
-    zsh: 'Zsh',
-    json: 'JSON',
-    md: 'Markdown',
-    markdown: 'Markdown',
-    yaml: 'YAML',
-    yml: 'YAML',
-    toml: 'TOML',
-    xml: 'XML',
-    sql: 'SQL',
-    dockerfile: 'Docker',
+    sh: { id: '1359299339071131708', name: 'Shell' },
+    bash: { id: '1359299339071131708', name: 'Bash' },
+    zsh: { id: '1359299339071131708', name: 'Zsh' },
+    json: { id: '1359299015484768338', name: 'JSON' },
+    md: { id: '1359299128655347824', name: 'Markdown' },
+    markdown: { id: '1359299128655347824', name: 'Markdown' },
+    yaml: { id: '1359299519124078724', name: 'YAML' },
+    yml: { id: '1359299519124078724', name: 'YAML' },
+    toml: { id: '1359299426157461678', name: 'TOML' },
+    xml: { id: '1359299519522672701', name: 'XML' },
+    sql: { id: '1359299339075321937', name: 'SQL' },
+    dockerfile: { id: '1359298813092823040', name: 'Docker' },
   };
 
   class DiscordRPCPlugin {
@@ -83,23 +82,20 @@
       this.lastPresenceSent = 0;
       this.pendingUpdateTimeout = null;
 
-      // Cache git info per folder agar tidak spam read file
       this.gitCache = {};
 
-      // Konfigurasi Default
       this.settings = {
         enabled: true,
         token: '',
         appName: 'Acode',
-        applicationId: DEFAULT_APP_ID,
+        applicationId: ACODE_APP_ID,
         activityType: 0, // 0 = PLAYING, 2 = LISTENING
         logoStyle: 'blue_bg',
         repoUrl: 'https://github.com/myzert/acode-discord-rpc',
         repoLabel: 'View Repository',
         workspaceOverride: '',
         privacyMode: false,
-        showLanguage: true,
-        showLineCount: true,
+        showLineCount: false, // Mirip VS Code resmi (Details hanya: Editing <filename>)
         showCursorPosition: true,
         idleTimeoutMinutes: 5,
         hoursOffset: 0,
@@ -113,10 +109,8 @@
       this.registerHeaderIcon();
       this.bindEditorEvents();
 
-      // Timer Pengecekan Idle Status
       setInterval(() => this.checkIdleStatus(), 30000);
 
-      // Mulai koneksi jika token tersedia
       if (this.settings.enabled && this.settings.token) {
         this.connect();
       } else if (!this.settings.token) {
@@ -126,20 +120,20 @@
 
     loadSettings() {
       try {
-        const saved = localStorage.getItem('myzert_acode_discord_rpc_v4');
+        const saved = localStorage.getItem('myzert_acode_discord_rpc_v5');
         if (saved) {
           this.settings = { ...this.settings, ...JSON.parse(saved) };
         }
       } catch (e) {
-        console.error('[Discord RPC] Gagal membaca konfigurasi:', e);
+        console.error('[Discord RPC] Gagal membaca setting:', e);
       }
     }
 
     saveSettings() {
       try {
-        localStorage.setItem('myzert_acode_discord_rpc_v4', JSON.stringify(this.settings));
+        localStorage.setItem('myzert_acode_discord_rpc_v5', JSON.stringify(this.settings));
       } catch (e) {
-        console.error('[Discord RPC] Gagal menyimpan konfigurasi:', e);
+        console.error('[Discord RPC] Gagal menyimpan setting:', e);
       }
     }
 
@@ -241,7 +235,6 @@
         console.warn('[Discord RPC] Error binding editor changes:', err);
       }
 
-      // Auto update line/column setiap 15 detik
       setInterval(() => {
         if (this.isConnected && !this.isIdle && this.settings.enabled) {
           this.schedulePresenceUpdate(0);
@@ -280,12 +273,11 @@
     }
 
     /**
-     * Membaca informasi folder dan repository dari file .git/config dan .git/HEAD
+     * Membaca informasi .git/config dan .git/HEAD dari direktori project
      */
     async detectGitRepository(fileUri) {
       if (!fileUri) return null;
 
-      // Cek cache
       if (this.gitCache[fileUri]) {
         return this.gitCache[fileUri];
       }
@@ -295,7 +287,6 @@
 
       try {
         let currentUri = fileUri;
-        // Cari folder .git naik hingga 4 level direktori
         for (let i = 0; i < 4; i++) {
           const lastSlash = currentUri.lastIndexOf('/');
           if (lastSlash === -1) break;
@@ -344,12 +335,10 @@
               this.gitCache[fileUri] = result;
               return result;
             }
-          } catch (e) {
-            // Folder ini bukan root git, lanjutkan naik ke folder atas
-          }
+          } catch (e) {}
         }
       } catch (err) {
-        console.warn('[Discord RPC] Gagal membaca .git:', err);
+        console.warn('[Discord RPC] Gagal membaca git info:', err);
       }
 
       return null;
@@ -377,7 +366,6 @@
             extension = parts.pop().toLowerCase();
           }
 
-          // Coba deteksi repo dan branch dari .git
           if (fileUri) {
             const gitInfo = await this.detectGitRepository(fileUri);
             if (gitInfo) {
@@ -385,7 +373,6 @@
               detectedRepoUrl = gitInfo.repoUrl;
               gitBranch = gitInfo.branch;
             } else if (!workspace) {
-              // Jika bukan folder git, ambil nama folder induk biasa
               const segments = fileUri.split('/').filter(Boolean);
               if (segments.length > 1) {
                 workspace = segments[segments.length - 2];
@@ -395,7 +382,6 @@
 
           const editor = editorManager.editor;
           if (editor) {
-            // Posisi kursor
             if (typeof editor.getCursorPosition === 'function') {
               const pos = editor.getCursorPosition();
               line = (pos.row || 0) + 1;
@@ -407,7 +393,6 @@
               col = pos - lineObj.from + 1;
             }
 
-            // Total baris kode
             if (editor.session && typeof editor.session.getLength === 'function') {
               totalLines = editor.session.getLength();
             } else if (editor.state && editor.state.doc) {
@@ -416,19 +401,22 @@
           }
         }
       } catch (err) {
-        console.warn('[Discord RPC] Gagal membaca info file aktif:', err);
+        console.warn('[Discord RPC] Error reading file info:', err);
       }
 
       if (!workspace) {
         workspace = 'Acode Project';
       }
 
-      const languageName = EXT_TO_LANG[extension] || (extension ? extension.toUpperCase() : 'Code');
+      const langData = LANGUAGE_MAP[extension] || {
+        id: '1359299466493956258',
+        name: extension ? extension.toUpperCase() : 'Code',
+      };
 
       return {
         fileName,
         extension,
-        languageName,
+        langData,
         line,
         col,
         totalLines,
@@ -445,38 +433,40 @@
 
       const appTitle = this.settings.appName || 'Acode';
 
-      // Baris 1: Detail File & Bahasa (contoh: Editing index.jsx [React JSX] (154 lines))
+      // ==========================================
+      // STRUKTUR 100% PERSIS VS CODE RPC:
+      // Baris 1: Editing <filename>
+      // Baris 2: Workspace: <workspace> [<branch>] - Ln <line>, Col <col>
+      // ==========================================
       let displayFileName = this.settings.privacyMode ? 'Protected File' : fileInfo.fileName;
       let details = `Editing ${displayFileName}`;
 
-      if (this.settings.showLanguage && !this.settings.privacyMode && fileInfo.extension) {
-        details += ` [${fileInfo.languageName}]`;
-      }
-
-      if (this.settings.showLineCount && fileInfo.totalLines > 1 && !this.settings.privacyMode) {
-        details += ` (${fileInfo.totalLines} lines)`;
-      }
-
-      // Baris 2: State Workspace & Git Branch (contoh: Workspace: cihuynime [main] - Ln 42, Col 18)
       let state = `Workspace: ${fileInfo.workspace}`;
       if (fileInfo.gitBranch && !this.settings.privacyMode) {
         state += ` [${fileInfo.gitBranch}]`;
       }
-
       if (this.settings.showCursorPosition && !this.settings.privacyMode) {
         state += ` - Ln ${fileInfo.line}, Col ${fileInfo.col}`;
       }
 
-      // Pilih Asset Logo Acode
+      // ==========================================
+      // ASSET GAMBAR (MIRIP VS CODE):
+      // Large Image : Logo Editor (Acode)
+      // Small Image : Badge Logo Bahasa (JS, PHP, Python, React, dll)
+      // ==========================================
       const largeImageId =
         this.settings.logoStyle === 'transparent' ? ACODE_ASSETS.transparent : ACODE_ASSETS.blue_bg;
 
       let largeText = `${appTitle} - Powerful Code Editor for Android`;
+      let smallImage = `mp:app-assets/383226320970055681/${fileInfo.langData.id}.png`;
+      let smallText = `Editing ${fileInfo.langData.name}`;
 
       if (this.isIdle) {
         details = `Idling in ${fileInfo.workspace}`;
         state = 'Idle';
         largeText = `${appTitle} (Idle)`;
+        smallImage = null;
+        smallText = null;
       }
 
       const activityType = parseInt(this.settings.activityType || 0, 10);
@@ -484,7 +474,7 @@
       const activity = {
         name: appTitle,
         type: activityType,
-        application_id: this.settings.applicationId || DEFAULT_APP_ID,
+        application_id: this.settings.applicationId || ACODE_APP_ID,
         details: details,
         state: state,
         timestamps: {
@@ -496,11 +486,15 @@
         },
       };
 
+      if (smallImage) {
+        activity.assets.small_image = smallImage;
+        activity.assets.small_text = smallText;
+      }
+
       // Tombol Interaktif Profil
       const buttons = [];
       const buttonUrls = [];
 
-      // Prioritas URL: Dari .git lokal -> lalu settingan user -> lalu default
       const finalRepoUrl = fileInfo.detectedRepoUrl || this.settings.repoUrl;
       if (finalRepoUrl) {
         buttons.push(this.settings.repoLabel || 'View Repository');
