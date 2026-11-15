@@ -1,16 +1,6 @@
 # Discord Rich Presence for Acode (Android) 📱✨
 
-Plugin Rich Presence (RPC) untuk aplikasi editor kode Android **Acode**, menampilkan aktivitas coding kamu secara langsung di Discord dengan status dan logo resmi **Acode**!
-
----
-
-## 📖 Cara Kerja Arsitektur (Technical Overview)
-
-Banyak yang bertanya mengapa aplikasi di Android tidak bisa menggunakan cara RPC konvensional:
-1. **Di PC (Desktop):** Aplikasi Discord Desktop membuka IPC socket lokal (`discord-ipc-0` atau port `127.0.0.1:6463`). Game atau teks editor di PC cukup melempar data ke port lokal tersebut tanpa perlu login token.
-2. **Di HP (Android):** Aplikasi resmi Discord Android **tidak pernah membuka port atau socket lokal**. Selain itu, Discord belum menyediakan Web REST API publik untuk mengubah status profil via OAuth2 dari jarak jauh.
-3. **Solusi Plugin Ini:**
-   Plugin ini menggunakan **Native WebSocket** di dalam WebView Acode untuk terhubung langsung ke **Discord Gateway** (`wss://gateway.discord.gg`). Menggunakan identifikasi aman (*Opcode 2*) dan pengiriman status (*Opcode 3*), plugin ini dapat memancarkan status coding secara mandiri, hemat daya, dan realtime tanpa memerlukan Node.js atau Termux tambahan.
+Plugin Rich Presence (RPC) resmi untuk aplikasi editor kode Android **Acode**, menampilkan aktivitas coding kamu secara langsung di Discord dengan status dan logo resmi **Acode**!
 
 ---
 
@@ -18,21 +8,25 @@ Banyak yang bertanya mengapa aplikasi di Android tidak bisa menggunakan cara RPC
 
 * **🎨 Logo & Branding Resmi Acode:**
   * Terintegrasi dengan Bot Application Acode ID: `1571462947983593595`.
-  * Memiliki 2 opsi logo: `acode-ada-bg-biru` dan `acode-bg-transparan`.
+  * Memiliki opsi logo resmi `acode-ada-bg-biru` dan `acode-bg-transparan`.
+* **🧠 Auto-Detect Git Repository & Branch (.git):**
+  * Membaca `.git/config` secara otomatis untuk mendeteksi link repository project (GitHub, GitLab, dll).
+  * Tombol **View Repository** di profil Discord kamu akan otomatis mengarah ke repo project yang sedang dibuka!
+  * Membaca `.git/HEAD` untuk menampilkan nama branch yang aktif (misal: `[main]`).
+  * Jika folder project **tidak memiliki `.git`**, otomatis menggunakan nama folder biasa dan tombol fallback ke repo RPC.
+* **🏷️ Deteksi Bahasa Pemrograman Lengkap:**
+  * Menampilkan nama bahasa secara eksplisit pada status:
+    * `Editing index.jsx [React JSX] (154 lines)`
+    * `Editing server.php [PHP] (80 lines)`
+    * `Editing app.js [JavaScript]`
+    * Mendukung JS, JSX, TS, TSX, PHP, Python, HTML, CSS, C++, Rust, Go, Dart, Kotlin, dll.
 * **🎧 Mode Fleksibel (Playing vs Listening):**
   * Kamu bisa memilih menampilkan status sebagai **Playing Acode** (Type 0) atau **Listening to Acode** (Type 2).
 * **🔴 Fitur Matikan / Nyalakan RPC (Toggle Switch):**
-  * Tekan shortcut **`Ctrl + Alt + T`** untuk mematikan atau mengaktifkan status RPC secara instan tanpa perlu uninstall plugin.
-  * Saat dimatikan, plugin langsung menghapus aktivitas dari profil Discord kamu.
-* **📂 Deteksi Workspace Otomatis:**
-  * Secara cerdas mendeteksi nama folder project tempat file kamu berada.
-* **🔗 Tombol Interaktif Profil:**
-  * Default link mengarah ke repository RPC resmi: `https://github.com/myzert/acode-discord-rpc`.
-  * Bisa kamu ganti dengan link repository GitHub project yang sedang kamu kerjakan.
-  * Tombol kedua mengarah ke website resmi Acode Editor.
-* **⚡ Realtime File, Line & Column Tracking:**
-  * **Baris 1:** `Editing index.js (154 lines)` (menampilkan nama file beserta total baris).
-  * **Baris 2:** `Workspace: acode-discord-rpc - Ln 42, Col 18`.
+  * Tekan shortcut **`Ctrl + Alt + T`** di Acode untuk mematikan atau menyalakan status RPC secara instan.
+  * Saat dimatikan, plugin langsung menghapus aktivitas dari profil Discord kamu (*clear presence*).
+* **⚡ Realtime Cursor & Line Tracking:**
+  * Menampilkan file aktif, jumlah baris kode, serta nomor baris dan kolom kursor (`Ln 42, Col 18`).
 * **💤 Deteksi Idle Otomatis:**
   * Jika kamu meninggalkan editor selama 5 menit tanpa mengetik, status otomatis beralih menjadi `Idling`.
 * **⏳ Hours Offset (Flexing Timer):**

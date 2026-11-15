@@ -1,6 +1,7 @@
 /**
  * Discord Rich Presence for Acode (Android)
  * Full-featured, native Discord RPC with authentic Acode branding.
+ * Features auto-detection of Git repository, branch, and language details.
  * Author: myzert (https://github.com/myzert)
  * Repository: https://github.com/myzert/acode-discord-rpc
  */
@@ -15,6 +16,61 @@
     transparent: '1571468057639915630', // acode-bg-transparan
   };
 
+  // Kamus Bahasa Pemrograman
+  const EXT_TO_LANG = {
+    // JavaScript / Web Frameworks
+    js: 'JavaScript',
+    mjs: 'JavaScript',
+    cjs: 'JavaScript',
+    jsx: 'React JSX',
+    ts: 'TypeScript',
+    tsx: 'React TSX',
+    vue: 'Vue',
+    svelte: 'Svelte',
+    html: 'HTML',
+    htm: 'HTML',
+    css: 'CSS',
+    scss: 'SCSS',
+    sass: 'SASS',
+    less: 'Less',
+
+    // Backend & Languages
+    php: 'PHP',
+    phtml: 'PHP',
+    py: 'Python',
+    ipynb: 'Jupyter',
+    rb: 'Ruby',
+    java: 'Java',
+    kt: 'Kotlin',
+    kts: 'Kotlin',
+    cs: 'C#',
+    c: 'C',
+    h: 'C Header',
+    cpp: 'C++',
+    cc: 'C++',
+    cxx: 'C++',
+    hpp: 'C++ Header',
+    rs: 'Rust',
+    go: 'Go',
+    dart: 'Dart',
+    lua: 'Lua',
+    zig: 'Zig',
+
+    // Shell & Config
+    sh: 'Shell',
+    bash: 'Bash',
+    zsh: 'Zsh',
+    json: 'JSON',
+    md: 'Markdown',
+    markdown: 'Markdown',
+    yaml: 'YAML',
+    yml: 'YAML',
+    toml: 'TOML',
+    xml: 'XML',
+    sql: 'SQL',
+    dockerfile: 'Docker',
+  };
+
   class DiscordRPCPlugin {
     constructor() {
       this.ws = null;
@@ -27,18 +83,22 @@
       this.lastPresenceSent = 0;
       this.pendingUpdateTimeout = null;
 
-      // Konfigurasi Lengkap
+      // Cache git info per folder agar tidak spam read file
+      this.gitCache = {};
+
+      // Konfigurasi Default
       this.settings = {
         enabled: true,
         token: '',
         appName: 'Acode',
         applicationId: DEFAULT_APP_ID,
-        activityType: 0, // 0 = PLAYING, 2 = LISTENING, 3 = WATCHING, 5 = COMPETING
-        logoStyle: 'blue_bg', // 'blue_bg' atau 'transparent'
+        activityType: 0, // 0 = PLAYING, 2 = LISTENING
+        logoStyle: 'blue_bg',
         repoUrl: 'https://github.com/myzert/acode-discord-rpc',
         repoLabel: 'View Repository',
         workspaceOverride: '',
-        privacyMode: false, // Sembunyikan nama file asli
+        privacyMode: false,
+        showLanguage: true,
         showLineCount: true,
         showCursorPosition: true,
         idleTimeoutMinutes: 5,
@@ -49,19 +109,14 @@
     async init($page) {
       this.loadSettings();
 
-      // Daftarkan Perintah Command Palette Acode
       this.registerCommands();
-
-      // Tambahkan Icon di Header Acode
       this.registerHeaderIcon();
-
-      // Pasang Event Hook Editor
       this.bindEditorEvents();
 
       // Timer Pengecekan Idle Status
       setInterval(() => this.checkIdleStatus(), 30000);
 
-      // Mulai koneksi jika diaktifkan dan token tersedia
+      // Mulai koneksi jika token tersedia
       if (this.settings.enabled && this.settings.token) {
         this.connect();
       } else if (!this.settings.token) {
@@ -71,7 +126,7 @@
 
     loadSettings() {
       try {
-        const saved = localStorage.getItem('myzert_acode_discord_rpc_v3');
+        const saved = localStorage.getItem('myzert_acode_discord_rpc_v4');
         if (saved) {
           this.settings = { ...this.settings, ...JSON.parse(saved) };
         }
@@ -82,7 +137,7 @@
 
     saveSettings() {
       try {
-        localStorage.setItem('myzert_acode_discord_rpc_v3', JSON.stringify(this.settings));
+        localStorage.setItem('myzert_acode_discord_rpc_v4', JSON.stringify(this.settings));
       } catch (e) {
         console.error('[Discord RPC] Gagal menyimpan konfigurasi:', e);
       }
@@ -91,21 +146,18 @@
     registerCommands() {
       if (!window.editorManager || !editorManager.editor || !editorManager.editor.commands) return;
 
-      // 1. Pengaturan Utama
       editorManager.editor.commands.addCommand({
         name: 'discord_rpc_settings',
         bindKey: { win: 'Ctrl-Alt-D', mac: 'Command-Alt-D' },
         exec: () => this.showSettingsDialog(),
       });
 
-      // 2. Toggle On / Off
       editorManager.editor.commands.addCommand({
         name: 'discord_rpc_toggle',
         bindKey: { win: 'Ctrl-Alt-T', mac: 'Command-Alt-T' },
         exec: () => this.toggleRPC(),
       });
 
-      // 3. Paksa Hubungkan Ulang (Reconnect)
       editorManager.editor.commands.addCommand({
         name: 'discord_rpc_reconnect',
         exec: () => {
@@ -140,7 +192,6 @@
     clearPresenceAndDisconnect() {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         try {
-          // Kirim payload kosong untuk menghapus aktivitas di Discord
           this.ws.send(
             JSON.stringify({
               op: 3,
@@ -228,49 +279,135 @@
       }, waitTime);
     }
 
-    getActiveFileInfo() {
+    /**
+     * Membaca informasi folder dan repository dari file .git/config dan .git/HEAD
+     */
+    async detectGitRepository(fileUri) {
+      if (!fileUri) return null;
+
+      // Cek cache
+      if (this.gitCache[fileUri]) {
+        return this.gitCache[fileUri];
+      }
+
+      const fsOperation = window.fsOperation || (window.acode && acode.require('fsOperation'));
+      if (!fsOperation) return null;
+
+      try {
+        let currentUri = fileUri;
+        // Cari folder .git naik hingga 4 level direktori
+        for (let i = 0; i < 4; i++) {
+          const lastSlash = currentUri.lastIndexOf('/');
+          if (lastSlash === -1) break;
+          currentUri = currentUri.substring(0, lastSlash);
+
+          const gitConfigUri = `${currentUri}/.git/config`;
+          const gitHeadUri = `${currentUri}/.git/HEAD`;
+
+          try {
+            const configText = await fsOperation(gitConfigUri).readFile('utf-8');
+            if (configText) {
+              let repoUrl = null;
+              const urlMatch = configText.match(/url\s*=\s*(.+)/);
+              if (urlMatch) {
+                repoUrl = urlMatch[1].trim();
+                if (repoUrl.startsWith('git@')) {
+                  repoUrl = repoUrl.replace('git@', 'https://').replace(':', '/');
+                }
+                if (repoUrl.endsWith('.git')) {
+                  repoUrl = repoUrl.slice(0, -4);
+                }
+              }
+
+              let branch = null;
+              try {
+                const headText = await fsOperation(gitHeadUri).readFile('utf-8');
+                if (headText) {
+                  const trimmedHead = headText.trim();
+                  if (trimmedHead.startsWith('ref: refs/heads/')) {
+                    branch = trimmedHead.replace('ref: refs/heads/', '').trim();
+                  } else {
+                    branch = trimmedHead.slice(0, 7);
+                  }
+                }
+              } catch (e) {}
+
+              const folderSegments = currentUri.split('/').filter(Boolean);
+              const folderName = folderSegments[folderSegments.length - 1] || 'Project';
+
+              const result = {
+                workspace: folderName,
+                repoUrl: repoUrl,
+                branch: branch,
+              };
+
+              this.gitCache[fileUri] = result;
+              return result;
+            }
+          } catch (e) {
+            // Folder ini bukan root git, lanjutkan naik ke folder atas
+          }
+        }
+      } catch (err) {
+        console.warn('[Discord RPC] Gagal membaca .git:', err);
+      }
+
+      return null;
+    }
+
+    async getActiveFileInfo() {
       let fileName = 'No File Open';
       let extension = '';
       let line = 1;
       let col = 1;
       let totalLines = 1;
+      let fileUri = null;
       let workspace = this.settings.workspaceOverride || '';
+      let detectedRepoUrl = null;
+      let gitBranch = null;
 
       try {
         if (window.editorManager && editorManager.activeFile) {
           const file = editorManager.activeFile;
           fileName = file.name || file.filename || 'Untitled';
+          fileUri = file.uri || file.location;
 
           const parts = fileName.split('.');
           if (parts.length > 1) {
             extension = parts.pop().toLowerCase();
           }
 
-          // Deteksi Workspace Otomatis dari folder path
-          if (!workspace && (file.uri || file.location)) {
-            const fileUri = file.uri || file.location;
-            const pathSegments = fileUri.split('/').filter(Boolean);
-            if (pathSegments.length > 1) {
-              workspace = pathSegments[pathSegments.length - 2];
+          // Coba deteksi repo dan branch dari .git
+          if (fileUri) {
+            const gitInfo = await this.detectGitRepository(fileUri);
+            if (gitInfo) {
+              if (!workspace) workspace = gitInfo.workspace;
+              detectedRepoUrl = gitInfo.repoUrl;
+              gitBranch = gitInfo.branch;
+            } else if (!workspace) {
+              // Jika bukan folder git, ambil nama folder induk biasa
+              const segments = fileUri.split('/').filter(Boolean);
+              if (segments.length > 1) {
+                workspace = segments[segments.length - 2];
+              }
             }
           }
 
           const editor = editorManager.editor;
           if (editor) {
-            // Ace Editor Cursor
+            // Posisi kursor
             if (typeof editor.getCursorPosition === 'function') {
               const pos = editor.getCursorPosition();
               line = (pos.row || 0) + 1;
               col = (pos.column || 0) + 1;
             } else if (editor.state && editor.state.selection) {
-              // CodeMirror Cursor
               const pos = editor.state.selection.main.head;
               const lineObj = editor.state.doc.lineAt(pos);
               line = lineObj.number;
               col = pos - lineObj.from + 1;
             }
 
-            // Total lines
+            // Total baris kode
             if (editor.session && typeof editor.session.getLength === 'function') {
               totalLines = editor.session.getLength();
             } else if (editor.state && editor.state.doc) {
@@ -279,32 +416,53 @@
           }
         }
       } catch (err) {
-        console.warn('[Discord RPC] Error reading active file info:', err);
+        console.warn('[Discord RPC] Gagal membaca info file aktif:', err);
       }
 
       if (!workspace) {
         workspace = 'Acode Project';
       }
 
-      return { fileName, extension, line, col, totalLines, workspace };
+      const languageName = EXT_TO_LANG[extension] || (extension ? extension.toUpperCase() : 'Code');
+
+      return {
+        fileName,
+        extension,
+        languageName,
+        line,
+        col,
+        totalLines,
+        workspace,
+        detectedRepoUrl,
+        gitBranch,
+      };
     }
 
-    buildPresencePayload() {
-      const fileInfo = this.getActiveFileInfo();
+    async buildPresencePayload() {
+      const fileInfo = await this.getActiveFileInfo();
       const offsetMs = (this.settings.hoursOffset || 0) * 3600 * 1000;
       const startTimestamp = this.sessionStartTime - offsetMs;
 
       const appTitle = this.settings.appName || 'Acode';
 
-      // Baris 1 (Details)
+      // Baris 1: Detail File & Bahasa (contoh: Editing index.jsx [React JSX] (154 lines))
       let displayFileName = this.settings.privacyMode ? 'Protected File' : fileInfo.fileName;
       let details = `Editing ${displayFileName}`;
+
+      if (this.settings.showLanguage && !this.settings.privacyMode && fileInfo.extension) {
+        details += ` [${fileInfo.languageName}]`;
+      }
+
       if (this.settings.showLineCount && fileInfo.totalLines > 1 && !this.settings.privacyMode) {
         details += ` (${fileInfo.totalLines} lines)`;
       }
 
-      // Baris 2 (State)
+      // Baris 2: State Workspace & Git Branch (contoh: Workspace: cihuynime [main] - Ln 42, Col 18)
       let state = `Workspace: ${fileInfo.workspace}`;
+      if (fileInfo.gitBranch && !this.settings.privacyMode) {
+        state += ` [${fileInfo.gitBranch}]`;
+      }
+
       if (this.settings.showCursorPosition && !this.settings.privacyMode) {
         state += ` - Ln ${fileInfo.line}, Col ${fileInfo.col}`;
       }
@@ -321,7 +479,6 @@
         largeText = `${appTitle} (Idle)`;
       }
 
-      // Activity Type: 0 = Playing, 2 = Listening to, 3 = Watching, 5 = Competing
       const activityType = parseInt(this.settings.activityType || 0, 10);
 
       const activity = {
@@ -339,13 +496,15 @@
         },
       };
 
-      // Tombol Interaktif
+      // Tombol Interaktif Profil
       const buttons = [];
       const buttonUrls = [];
 
-      if (this.settings.repoUrl) {
+      // Prioritas URL: Dari .git lokal -> lalu settingan user -> lalu default
+      const finalRepoUrl = fileInfo.detectedRepoUrl || this.settings.repoUrl;
+      if (finalRepoUrl) {
         buttons.push(this.settings.repoLabel || 'View Repository');
-        buttonUrls.push(this.settings.repoUrl);
+        buttonUrls.push(finalRepoUrl);
       }
 
       buttons.push('Get Acode');
@@ -357,12 +516,12 @@
       return activity;
     }
 
-    sendPresenceUpdate() {
+    async sendPresenceUpdate() {
       if (!this.settings.enabled || !this.isConnected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
         return;
       }
 
-      const activity = this.buildPresencePayload();
+      const activity = await this.buildPresencePayload();
       const payload = {
         op: 3,
         d: {
@@ -408,13 +567,12 @@
           this.cleanupHeartbeat();
           this.isConnected = false;
 
-          // Reconnect otomatis jika masih aktif
           if (this.settings.enabled && this.settings.token) {
             setTimeout(() => this.connect(), 8000);
           }
         };
       } catch (e) {
-        console.error('[Discord RPC] Gagal menginisialisasi WebSocket:', e);
+        console.error('[Discord RPC] Inisialisasi WebSocket gagal:', e);
       }
     }
 
@@ -470,8 +628,8 @@
       }
     }
 
-    sendIdentify() {
-      const initialActivity = this.buildPresencePayload();
+    async sendIdentify() {
+      const initialActivity = await this.buildPresencePayload();
 
       const payload = {
         op: 2,
@@ -540,21 +698,21 @@
             placeholder: '0 = Playing, 2 = Listening to',
             type: 'text',
             value: String(this.settings.activityType || 0),
-            text: 'Mode Tipe Status (0: Playing, 2: Listening to):',
+            text: 'Mode Status (0: Playing, 2: Listening to):',
           },
           {
             id: 'repoUrl',
-            placeholder: 'https://github.com/myzert/acode-discord-rpc',
+            placeholder: 'Fallback jika tidak ada .git',
             type: 'text',
             value: this.settings.repoUrl,
-            text: 'Link Repository (Tombol Profil):',
+            text: 'Fallback Repo URL (jika folder tidak ada .git):',
           },
           {
             id: 'workspaceOverride',
             placeholder: 'Kosongkan untuk otomatis deteksi folder',
             type: 'text',
             value: this.settings.workspaceOverride,
-            text: 'Nama Workspace (Opsional):',
+            text: 'Nama Workspace (Kosongkan jika auto):',
           },
           {
             id: 'hoursOffset',
