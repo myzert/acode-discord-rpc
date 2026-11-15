@@ -1,7 +1,7 @@
 /**
  * Discord Rich Presence for Acode (Android)
  * Authentic Visual Studio Code layout, featuring official Acode branding
- * with real dynamic programming language badge icons.
+ * with real dynamic programming language badges and idle status icons.
  * Author: myzert (https://github.com/myzert)
  * Repository: https://github.com/myzert/acode-discord-rpc
  */
@@ -16,24 +16,38 @@
     transparent: '1571468057639915630', // acode-bg-transparan
   };
 
-  // Official Language Asset IDs (50+ Bahasa Pemrograman untuk Small Image Badge)
+  // Asset Idle Resmi
+  const ASSET_IDLE = '1359298971666874368'; // Icon Idle Zzz
+
+  // Pemetaan Lengkap Bahasa & Ekstensi File
   const LANGUAGE_MAP = {
-    // JavaScript / TypeScript / Web
+    // Teks & Dokumen
+    txt: { id: '1359299371832705175', name: 'Plain Text' },
+    text: { id: '1359299371832705175', name: 'Plain Text' },
+    log: { id: '1359299073085280396', name: 'Log' },
+    md: { id: '1359299128655347824', name: 'Markdown' },
+    markdown: { id: '1359299128655347824', name: 'Markdown' },
+    env: { id: '1359298813033971723', name: 'Config' },
+    gitignore: { id: '1359298453284323538', name: 'Git' },
+    svg: { id: '1359299371551686697', name: 'SVG' },
+
+    // Web & Frontend
     js: { id: '1359299016025964687', name: 'JavaScript' },
     mjs: { id: '1359299016025964687', name: 'JavaScript' },
     cjs: { id: '1359299016025964687', name: 'JavaScript' },
     jsx: { id: '1359299015983894651', name: 'React JSX' },
     ts: { id: '1359299427059236984', name: 'TypeScript' },
     tsx: { id: '1359299426262319284', name: 'React TSX' },
-    vue: { id: '1359299519573131545', name: 'Vue' },
-    svelte: { id: '1359299371639771367', name: 'Svelte' },
     html: { id: '1359298971646038066', name: 'HTML' },
     htm: { id: '1359298971646038066', name: 'HTML' },
     css: { id: '1359298399085527152', name: 'CSS' },
     scss: { id: '1359299338932584549', name: 'SCSS' },
+    sass: { id: '1359299338932584549', name: 'SASS' },
     less: { id: '1359299073168904372', name: 'Less' },
+    vue: { id: '1359299519573131545', name: 'Vue' },
+    svelte: { id: '1359299371639771367', name: 'Svelte' },
 
-    // Backend & Languages
+    // Backend, Data & Sistem
     php: { id: '1359299228186312897', name: 'PHP' },
     phtml: { id: '1359299228186312897', name: 'PHP' },
     py: { id: '1359299282380918886', name: 'Python' },
@@ -55,13 +69,11 @@
     lua: { id: '1359299073148059749', name: 'Lua' },
     zig: { id: '1359299561897721957', name: 'Zig' },
 
-    // Shell & Config
+    // Config, Shell & Databases
     sh: { id: '1359299339071131708', name: 'Shell' },
     bash: { id: '1359299339071131708', name: 'Bash' },
     zsh: { id: '1359299339071131708', name: 'Zsh' },
     json: { id: '1359299015484768338', name: 'JSON' },
-    md: { id: '1359299128655347824', name: 'Markdown' },
-    markdown: { id: '1359299128655347824', name: 'Markdown' },
     yaml: { id: '1359299519124078724', name: 'YAML' },
     yml: { id: '1359299519124078724', name: 'YAML' },
     toml: { id: '1359299426157461678', name: 'TOML' },
@@ -89,13 +101,12 @@
         token: '',
         appName: 'Acode',
         applicationId: ACODE_APP_ID,
-        activityType: 0, // 0 = PLAYING, 2 = LISTENING
+        activityType: 0,
         logoStyle: 'blue_bg',
         repoUrl: 'https://github.com/myzert/acode-discord-rpc',
         repoLabel: 'View Repository',
         workspaceOverride: '',
         privacyMode: false,
-        showLineCount: false, // Mirip VS Code resmi (Details hanya: Editing <filename>)
         showCursorPosition: true,
         idleTimeoutMinutes: 5,
         hoursOffset: 0,
@@ -109,7 +120,7 @@
       this.registerHeaderIcon();
       this.bindEditorEvents();
 
-      setInterval(() => this.checkIdleStatus(), 30000);
+      setInterval(() => this.checkIdleStatus(), 20000);
 
       if (this.settings.enabled && this.settings.token) {
         this.connect();
@@ -120,7 +131,7 @@
 
     loadSettings() {
       try {
-        const saved = localStorage.getItem('myzert_acode_discord_rpc_v5');
+        const saved = localStorage.getItem('myzert_acode_discord_rpc_v6');
         if (saved) {
           this.settings = { ...this.settings, ...JSON.parse(saved) };
         }
@@ -131,7 +142,7 @@
 
     saveSettings() {
       try {
-        localStorage.setItem('myzert_acode_discord_rpc_v5', JSON.stringify(this.settings));
+        localStorage.setItem('myzert_acode_discord_rpc_v6', JSON.stringify(this.settings));
       } catch (e) {
         console.error('[Discord RPC] Gagal menyimpan setting:', e);
       }
@@ -207,7 +218,10 @@
 
       const triggerActivity = (delay = 3000) => {
         this.lastUserActivity = Date.now();
-        if (this.isIdle) this.isIdle = false;
+        if (this.isIdle) {
+          this.isIdle = false;
+          console.log('[Discord RPC] User aktif kembali dari idle.');
+        }
         this.schedulePresenceUpdate(delay);
       };
 
@@ -247,6 +261,7 @@
       const idleLimitMs = (this.settings.idleTimeoutMinutes || 5) * 60 * 1000;
       if (Date.now() - this.lastUserActivity > idleLimitMs && !this.isIdle) {
         this.isIdle = true;
+        console.log('[Discord RPC] User idle. Mengubah status ke Idle Logo & Zzz...');
         this.schedulePresenceUpdate(0);
       }
     }
@@ -272,9 +287,6 @@
       }, waitTime);
     }
 
-    /**
-     * Membaca informasi .git/config dan .git/HEAD dari direktori project
-     */
     async detectGitRepository(fileUri) {
       if (!fileUri) return null;
 
@@ -349,7 +361,6 @@
       let extension = '';
       let line = 1;
       let col = 1;
-      let totalLines = 1;
       let fileUri = null;
       let workspace = this.settings.workspaceOverride || '';
       let detectedRepoUrl = null;
@@ -392,12 +403,6 @@
               line = lineObj.number;
               col = pos - lineObj.from + 1;
             }
-
-            if (editor.session && typeof editor.session.getLength === 'function') {
-              totalLines = editor.session.getLength();
-            } else if (editor.state && editor.state.doc) {
-              totalLines = editor.state.doc.lines;
-            }
           }
         }
       } catch (err) {
@@ -409,8 +414,8 @@
       }
 
       const langData = LANGUAGE_MAP[extension] || {
-        id: '1359299466493956258',
-        name: extension ? extension.toUpperCase() : 'Code',
+        id: '1359299371832705175', // fallback ke icon text document
+        name: extension ? extension.toUpperCase() : 'Plain Text',
       };
 
       return {
@@ -419,7 +424,6 @@
         langData,
         line,
         col,
-        totalLines,
         workspace,
         detectedRepoUrl,
         gitBranch,
@@ -432,41 +436,40 @@
       const startTimestamp = this.sessionStartTime - offsetMs;
 
       const appTitle = this.settings.appName || 'Acode';
-
-      // ==========================================
-      // STRUKTUR 100% PERSIS VS CODE RPC:
-      // Baris 1: Editing <filename>
-      // Baris 2: Workspace: <workspace> [<branch>] - Ln <line>, Col <col>
-      // ==========================================
-      let displayFileName = this.settings.privacyMode ? 'Protected File' : fileInfo.fileName;
-      let details = `Editing ${displayFileName}`;
-
-      let state = `Workspace: ${fileInfo.workspace}`;
-      if (fileInfo.gitBranch && !this.settings.privacyMode) {
-        state += ` [${fileInfo.gitBranch}]`;
-      }
-      if (this.settings.showCursorPosition && !this.settings.privacyMode) {
-        state += ` - Ln ${fileInfo.line}, Col ${fileInfo.col}`;
-      }
-
-      // ==========================================
-      // ASSET GAMBAR (MIRIP VS CODE):
-      // Large Image : Logo Editor (Acode)
-      // Small Image : Badge Logo Bahasa (JS, PHP, Python, React, dll)
-      // ==========================================
-      const largeImageId =
+      const defaultAcodeLogo =
         this.settings.logoStyle === 'transparent' ? ACODE_ASSETS.transparent : ACODE_ASSETS.blue_bg;
 
+      let details = '';
+      let state = '';
+      let largeImage = defaultAcodeLogo;
       let largeText = `${appTitle} - Powerful Code Editor for Android`;
       let smallImage = `mp:app-assets/383226320970055681/${fileInfo.langData.id}.png`;
       let smallText = `Editing ${fileInfo.langData.name}`;
 
       if (this.isIdle) {
+        // STATUS SAAT IDLE:
+        // Logo Besar: Idle Sleeping Icon
+        // Logo Kecil: Acode Editor Badge
         details = `Idling in ${fileInfo.workspace}`;
-        state = 'Idle';
-        largeText = `${appTitle} (Idle)`;
-        smallImage = null;
-        smallText = null;
+        state = 'Zzz...';
+        largeImage = `mp:app-assets/383226320970055681/${ASSET_IDLE}.png`;
+        largeText = `${appTitle} (Idling)`;
+        smallImage = defaultAcodeLogo;
+        smallText = `${appTitle} Editor`;
+      } else {
+        // STATUS SAAT CODING (PERSIS VS CODE):
+        // Baris 1: Editing <filename>
+        // Baris 2: Workspace: <workspace> [<branch>] - Ln <line>, Col <col>
+        const displayFileName = this.settings.privacyMode ? 'Protected File' : fileInfo.fileName;
+        details = `Editing ${displayFileName}`;
+
+        state = `Workspace: ${fileInfo.workspace}`;
+        if (fileInfo.gitBranch && !this.settings.privacyMode) {
+          state += ` [${fileInfo.gitBranch}]`;
+        }
+        if (this.settings.showCursorPosition && !this.settings.privacyMode) {
+          state += ` - Ln ${fileInfo.line}, Col ${fileInfo.col}`;
+        }
       }
 
       const activityType = parseInt(this.settings.activityType || 0, 10);
@@ -481,7 +484,7 @@
           start: startTimestamp,
         },
         assets: {
-          large_image: largeImageId,
+          large_image: largeImage,
           large_text: largeText,
         },
       };
@@ -491,7 +494,7 @@
         activity.assets.small_text = smallText;
       }
 
-      // Tombol Interaktif Profil
+      // Tombol Interaktif
       const buttons = [];
       const buttonUrls = [];
 
