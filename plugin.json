@@ -2,7 +2,7 @@
   "id": "myzert.acode.discord.rpc",
   "name": "Discord Rich Presence for Acode",
   "main": "main.js",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "readme": "readme.md",
   "icon": "icon.png",
   "files": [],

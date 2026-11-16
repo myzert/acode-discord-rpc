@@ -2,8 +2,17 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform: Acode (Android)](https://img.shields.io/badge/Platform-Acode%20(Android)-teal.svg)](https://acode.app)
-[![Release](https://img.shields.io/badge/Release-v1.2.0-blue.svg)](https://github.com/myzert/acode-discord-rpc/releases)
+[![Release](https://img.shields.io/badge/Release-v1.2.1-blue.svg)](https://github.com/myzert/acode-discord-rpc/releases)
 [![Author](https://img.shields.io/badge/Author-myzert-purple.svg)](https://github.com/myzert)
+
+> [!WARNING]
+> **Important Security and Account Risk Notice:**
+> This plugin connects directly to the Discord Gateway WebSocket using a personal Discord user account token.
+>
+> 1. **Discord Terms of Service Notice:** Automating user accounts or connecting personal user tokens outside official Discord client applications is considered self-botting and operates against the Discord Terms of Service.
+> 2. **Account Standing Risk:** While this plugin strictly transmits Rich Presence activity updates (Opcode 3) and never reads private messages, sends chat spam, or accesses unauthorized data, using a user token carries an inherent risk of account limitation, warning, or termination by Discord.
+> 3. **Usage Recommendation:** Use this plugin at your own discretion and responsibility. If you have concerns regarding your primary Discord account standing, we strongly advise testing or using this extension with an alternate or secondary account.
+> 4. **Token Storage Safety:** Your token is stored exclusively within Acode's local private sandboxed storage (`localStorage`). It is never transmitted to third-party servers, intermediate proxies, or telemetry endpoints. Never disclose your token to anyone.
 
 An authentic, unofficial Discord Rich Presence (RPC) plugin for the [Acode](https://acode.app) code editor on Android. Displays real-time mobile coding activity on your Discord profile with genuine Visual Studio Code layout fidelity.
 
